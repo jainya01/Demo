@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import ExcelJS from "exceljs";
 import { toast, ToastContainer } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -7,6 +6,7 @@ import {
   faChevronLeft,
   faChevronRight,
 } from "@fortawesome/free-solid-svg-icons";
+import axiosInstance from "../utils/axiosInstance";
 
 function EditSales() {
   const API_URL = import.meta.env.VITE_API_URL;
@@ -26,7 +26,7 @@ function EditSales() {
   useEffect(() => {
     const allData = async () => {
       try {
-        const response = await axios.get(`${API_URL}/alleditsales`);
+        const response = await axiosInstance.get(`${API_URL}/alleditsales`);
         setUser(response.data.data);
         setFilteredData(response.data.data);
       } catch (error) {

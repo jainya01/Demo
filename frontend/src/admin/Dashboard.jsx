@@ -26,10 +26,12 @@ import {
   faX,
 } from "@fortawesome/free-solid-svg-icons";
 import { Link, useParams } from "react-router-dom";
+import axiosInstance from "../utils/axiosInstance";
 
 function Dashboard() {
   const API_URL = import.meta.env.VITE_API_URL;
 
+  const roles = localStorage.getItem("role");
   const [globalQuery, setGlobalQuery] = useState("");
   const [stockList, setStockList] = useState([]);
   const [filteredStockList, setFilteredStockList] = useState([]);
@@ -73,8 +75,12 @@ function Dashboard() {
     const fetchData = async () => {
       try {
         const [stocksRes, salesRes] = await Promise.all([
-          axios.get(`${API_URL}/allstocks`, { signal: controller.signal }),
-          axios.get(`${API_URL}/allsales`, { signal: controller.signal }),
+          axiosInstance.get(`${API_URL}/allstocks`, {
+            signal: controller.signal,
+          }),
+          axiosInstance.get(`${API_URL}/allsales`, {
+            signal: controller.signal,
+          }),
         ]);
 
         if (!mounted) return;
@@ -532,7 +538,7 @@ function Dashboard() {
 
     const initAuth = async () => {
       try {
-        const staffResponse = await axios.get(`${API_URL}/allstaffs`);
+        const staffResponse = await axiosInstance.get(`${API_URL}/allstaffs`);
         const staffs = staffResponse.data?.data || staffResponse.data || [];
 
         if (isMounted) {
@@ -546,7 +552,7 @@ function Dashboard() {
         if (agentUser) {
           if (isMounted) setRole("agent");
 
-          const agentRes = await axios.get(`${API_URL}/allagents`);
+          const agentRes = await axiosInstance.get(`${API_URL}/allagents`);
           const agents = agentRes.data?.data || [];
 
           const me = agents.find((a) => String(a.id) === String(agentUser.id));
@@ -665,7 +671,9 @@ function Dashboard() {
 
   const somestocks = async () => {
     try {
-      const response = await axios.get(`${API_URL}/somestocksdata/${id}`);
+      const response = await axiosInstance.get(
+        `${API_URL}/somestocksdata/${id}`,
+      );
 
       const data = response.data?.data;
 
@@ -693,7 +701,7 @@ function Dashboard() {
     }
 
     try {
-      const response = await axios.put(
+      const response = await axiosInstance.put(
         `${API_URL}/updatestocks/${editData.id}`,
         {
           sector: editData.sector,
@@ -730,7 +738,7 @@ function Dashboard() {
     const adminData = async () => {
       try {
         const adminUser = JSON.parse(localStorage.getItem("adminUser"));
-        const response = await axios.get(`${API_URL}/alladmindata`);
+        const response = await axiosInstance.get(`${API_URL}/alladmindata`);
         const admins = response.data.data || [];
         const currentAdmin = admins.find((a) => a.id === adminUser?.id);
         setAdmin(currentAdmin);
@@ -757,7 +765,7 @@ function Dashboard() {
   useEffect(() => {
     const uraseData = async () => {
       try {
-        const response = await axios.get(`${API_URL}/allotbs`);
+        const response = await axiosInstance.get(`${API_URL}/allotbs`);
         const data = response.data?.data || [];
         const uraseBlockedIds = localStorage.getItem("uraseBlockedIds") || "";
         const blockedIds = uraseBlockedIds
@@ -869,42 +877,51 @@ function Dashboard() {
               </span>
             </div>
 
-            <Link className="text-decoration-none text-dark" to="/admin/urase">
-              <div className="position-relative poniter-class">
-                <FontAwesomeIcon icon={faBell} />
-                <div
-                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-flex align-items-center justify-content-center"
-                  style={{
-                    width: "20px",
-                    height: "20px",
-                    borderRadius: "50%",
-                    fontSize: "11px",
-                    padding: 0,
-                  }}
+            {roles === "admin" && (
+              <>
+                <Link
+                  className="text-decoration-none text-dark"
+                  to="/admin/urase"
                 >
-                  {urase.length}
-                </div>
-              </div>
-            </Link>
+                  <div className="position-relative poniter-class">
+                    <FontAwesomeIcon icon={faBell} />
+                    <div
+                      className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-flex align-items-center justify-content-center"
+                      style={{
+                        width: "20px",
+                        height: "20px",
+                        borderRadius: "50%",
+                        fontSize: "11px",
+                        padding: 0,
+                      }}
+                    >
+                      {urase.length}
+                    </div>
+                  </div>
+                </Link>
 
-            <Link
-              className="text-decoration-none text-dark"
-              to="/admin/settings"
-            >
-              <div className="d-flex align-items-center gap-2 poniter-class">
-                <div
-                  className="rounded-circle bg-success text-white d-flex align-items-center justify-content-center fw-bold"
-                  style={{ width: "36px", height: "36px" }}
+                <Link
+                  className="text-decoration-none text-dark"
+                  to="/admin/settings"
                 >
-                  {getInitials(admin?.name)}
-                </div>
+                  <div className="d-flex align-items-center gap-2 poniter-class">
+                    <div
+                      className="rounded-circle bg-success text-white d-flex align-items-center justify-content-center fw-bold"
+                      style={{ width: "36px", height: "36px" }}
+                    >
+                      {getInitials(admin?.name)}
+                    </div>
 
-                <div>
-                  <div className="fw-semibold">{admin?.name}</div>
-                  <small className="text-muted fw-medium">{admin?.role}</small>
-                </div>
-              </div>
-            </Link>
+                    <div>
+                      <div className="fw-semibold">{admin?.name}</div>
+                      <small className="text-muted fw-medium">
+                        {admin?.role}
+                      </small>
+                    </div>
+                  </div>
+                </Link>
+              </>
+            )}
           </div>
         </div>
 

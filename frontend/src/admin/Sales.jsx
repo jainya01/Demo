@@ -15,6 +15,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import "../App.css";
 import { createPortal } from "react-dom";
+import axiosInstance from "../utils/axiosInstance";
 
 function Sales() {
   const API_URL = import.meta.env.VITE_API_URL;
@@ -163,8 +164,12 @@ function Sales() {
     const fetchAll = async () => {
       try {
         const [agentsRes, stocksRes] = await Promise.all([
-          axios.get(`${API_URL}/allagents`, { signal: controller.signal }),
-          axios.get(`${API_URL}/allstocks`, { signal: controller.signal }),
+          axiosInstance.get(`${API_URL}/allagents`, {
+            signal: controller.signal,
+          }),
+          axiosInstance.get(`${API_URL}/allstocks`, {
+            signal: controller.signal,
+          }),
         ]);
 
         if (agentsRes.data && agentsRes.data.success) {
@@ -334,7 +339,7 @@ function Sales() {
 
   const fetchSales = async () => {
     try {
-      const response = await axios.get(`${API_URL}/allsales`);
+      const response = await axiosInstance.get(`${API_URL}/allsales`);
       const payload = response.data?.data ?? response.data;
       setStaff(Array.isArray(payload) ? payload : []);
     } catch (err) {
@@ -378,9 +383,13 @@ function Sales() {
     if (stock.stock_id) payload.stock_id = stock.stock_id;
 
     try {
-      const response = await axios.post(`${API_URL}/salespost`, payload, {
-        headers: { "Content-Type": "application/json" },
-      });
+      const response = await axiosInstance.post(
+        `${API_URL}/salespost`,
+        payload,
+        {
+          headers: { "Content-Type": "application/json" },
+        },
+      );
 
       if (response.data?.success) {
         toast.success("Sales added successfully!");
@@ -629,9 +638,12 @@ function Sales() {
     if (!confirmDelete) return;
 
     try {
-      const res = await axios.delete(`${API_URL}/deletesalesdata/${sector}`, {
-        data: { staff },
-      });
+      const res = await axiosInstance.delete(
+        `${API_URL}/deletesalesdata/${sector}`,
+        {
+          data: { staff },
+        },
+      );
 
       toast.success(res.data.message || "Sales deleted");
     } catch (error) {
@@ -648,7 +660,7 @@ function Sales() {
     if (!confirmDelete) return;
 
     try {
-      const res = await axios.delete(`${API_URL}/deletesalesid/${id}`, {
+      const res = await axiosInstance.delete(`${API_URL}/deletesalesid/${id}`, {
         data: { staff },
       });
 
@@ -675,7 +687,7 @@ function Sales() {
     }
 
     try {
-      const response = await axios.put(
+      const response = await axiosInstance.put(
         `${API_URL}/updatesales/${editData.id}`,
         {
           sector: editData.sector,

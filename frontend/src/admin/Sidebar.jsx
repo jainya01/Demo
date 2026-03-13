@@ -210,7 +210,7 @@ export default function Sidebar() {
       <nav className="navbar navbar-light bg-light d-md-none mobile-navbar-toggle">
         <div className="container-fluid">
           <button
-            className="btn btn-outline-secondary hamburger-btn"
+            className="btn btn-outline-success update-update1"
             onClick={toggleSidebar}
             aria-label="Open sidebar"
           >

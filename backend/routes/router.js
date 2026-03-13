@@ -8,6 +8,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import ExcelJS from "exceljs";
 import pool from "../config/db.js";
+import authenticate from "../middleware/auth.js";
 
 dotenv.config();
 const router = express.Router();
@@ -77,7 +78,7 @@ router.post("/adminlogin", async (req, res) => {
     const token = jwt.sign(
       { id: admin.id, email: admin.email, role: admin.role },
       process.env.JWT_SECRET,
-      { expiresIn: "8h" },
+      { expiresIn: "15m" },
     );
 
     res.status(200).json({
@@ -95,7 +96,7 @@ router.post("/adminlogin", async (req, res) => {
   }
 });
 
-router.post("/postadminmail", async (req, res) => {
+router.post("/postadminmail", authenticate, async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
@@ -165,7 +166,7 @@ router.post("/postadminmail", async (req, res) => {
   }
 });
 
-router.delete("/admindelete/:id", async (req, res) => {
+router.delete("/admindelete/:id", authenticate, async (req, res) => {
   let { id } = req.params;
 
   if (!id || id === "null" || isNaN(Number(id))) {
@@ -190,7 +191,7 @@ router.delete("/admindelete/:id", async (req, res) => {
   }
 });
 
-router.put("/editadmin/:id", async (req, res) => {
+router.put("/editadmin/:id", authenticate, async (req, res) => {
   const { id } = req.params;
   const { newEmail, newPassword } = req.body;
 
@@ -236,7 +237,7 @@ router.put("/editadmin/:id", async (req, res) => {
   }
 });
 
-router.get("/alladmindata", async (req, res) => {
+router.get("/alladmindata", authenticate, async (req, res) => {
   try {
     const [rows] = await pool.execute(
       "SELECT id, name, email, role FROM admin ORDER BY id DESC",
@@ -306,7 +307,7 @@ router.post("/agentlogin", async (req, res) => {
         role: "agent",
       },
       secret,
-      { expiresIn: "8h" },
+      { expiresIn: "2h" },
     );
 
     res.status(200).json({
@@ -378,7 +379,7 @@ router.post("/stafflogin", async (req, res) => {
         role: "staff",
       },
       secret,
-      { expiresIn: "8h" },
+      { expiresIn: "1h" },
     );
 
     res.status(200).json({
@@ -397,7 +398,7 @@ router.post("/stafflogin", async (req, res) => {
   }
 });
 
-router.post("/stockpost", async (req, res) => {
+router.post("/stockpost", authenticate, async (req, res) => {
   try {
     const { sector, pax, dot, fare, airline, flightno, pnr } = req.body;
 
@@ -438,7 +439,7 @@ router.post("/stockpost", async (req, res) => {
   }
 });
 
-router.get("/allstocks", async (req, res) => {
+router.get("/allstocks", authenticate, async (req, res) => {
   try {
     const page = Math.max(Number.parseInt(req.query.page || "1", 10), 1);
     let limit = Math.min(
@@ -470,7 +471,7 @@ router.get("/allstocks", async (req, res) => {
   }
 });
 
-router.delete("/deletestockdata/:id", async (req, res) => {
+router.delete("/deletestockdata/:id", authenticate, async (req, res) => {
   const { id } = req.params;
 
   if (!id || isNaN(id)) {
@@ -513,7 +514,7 @@ router.delete("/deletestockdata/:id", async (req, res) => {
   }
 });
 
-router.post("/salespost", async (req, res) => {
+router.post("/salespost", authenticate, async (req, res) => {
   try {
     let { stock_id, sector, pax, dot, dotb, airline, agent, fare, pnr } =
       req.body;
@@ -725,7 +726,7 @@ router.post("/salespost", async (req, res) => {
   }
 });
 
-router.get("/allsales", async (req, res) => {
+router.get("/allsales", authenticate, async (req, res) => {
   try {
     const page = Math.max(Number.parseInt(req.query.page || "1", 10), 1);
     let limit = Math.min(
@@ -768,7 +769,7 @@ router.get("/allsales", async (req, res) => {
   }
 });
 
-router.delete("/deletesalesdata/:sector", async (req, res) => {
+router.delete("/deletesalesdata/:sector", authenticate, async (req, res) => {
   const { sector } = req.params;
 
   if (!sector) {
@@ -819,7 +820,7 @@ router.delete("/deletesalesdata/:sector", async (req, res) => {
   }
 });
 
-router.delete("/deletesalesid/:id", async (req, res) => {
+router.delete("/deletesalesid/:id", authenticate, async (req, res) => {
   const { id } = req.params;
 
   if (!id || isNaN(id)) {
@@ -872,7 +873,7 @@ function isValidEmail(email) {
   return typeof email === "string" && /\S+@\S+\.\S+/.test(email);
 }
 
-router.post("/agentpost", async (req, res) => {
+router.post("/agentpost", authenticate, async (req, res) => {
   try {
     const { agent_name, agent_email, agent_password } = req.body;
 
@@ -936,7 +937,7 @@ router.post("/agentpost", async (req, res) => {
   }
 });
 
-router.get("/allagents", async (req, res) => {
+router.get("/allagents", authenticate, async (req, res) => {
   try {
     const page = Math.max(Number.parseInt(req.query.page || "1", 10), 1);
     let limit = Math.min(
@@ -967,7 +968,7 @@ router.get("/allagents", async (req, res) => {
   }
 });
 
-router.get("/somesalesdata/:id", async (req, res) => {
+router.get("/somesalesdata/:id", authenticate, async (req, res) => {
   const { id } = req.params;
 
   if (!id || isNaN(id)) {
@@ -1004,7 +1005,7 @@ router.get("/somesalesdata/:id", async (req, res) => {
   }
 });
 
-router.put("/updatesales/:id", async (req, res) => {
+router.put("/updatesales/:id", authenticate, async (req, res) => {
   const { id } = req.params;
   const { sector, pax, dotb, agent } = req.body;
 
@@ -1072,7 +1073,7 @@ router.put("/updatesales/:id", async (req, res) => {
   }
 });
 
-router.get("/somestocksdata/:id", async (req, res) => {
+router.get("/somestocksdata/:id", authenticate, async (req, res) => {
   const { id } = req.params;
 
   if (!id || isNaN(id)) {
@@ -1109,7 +1110,7 @@ router.get("/somestocksdata/:id", async (req, res) => {
   }
 });
 
-router.put("/updatestocks/:id", async (req, res) => {
+router.put("/updatestocks/:id", authenticate, async (req, res) => {
   const id = Number(req.params.id);
 
   if (!Number.isInteger(id) || id <= 0) {
@@ -1167,7 +1168,7 @@ router.put("/updatestocks/:id", async (req, res) => {
   }
 });
 
-router.put("/agent/toggle/:id", async (req, res) => {
+router.put("/agent/toggle/:id", authenticate, async (req, res) => {
   const agentId = req.params.id;
   const { field, value } = req.body;
 
@@ -1206,7 +1207,7 @@ router.put("/agent/toggle/:id", async (req, res) => {
   }
 });
 
-router.put("/editagent/:id", async (req, res) => {
+router.put("/editagent/:id", authenticate, async (req, res) => {
   const id = req.params.id;
   const { agent_name, agent_email, agent_password } = req.body;
 
@@ -1258,7 +1259,7 @@ router.put("/editagent/:id", async (req, res) => {
   }
 });
 
-router.put("/editstaff/:id", async (req, res) => {
+router.put("/editstaff/:id", authenticate, async (req, res) => {
   const id = req.params.id;
   const { staff_agent, staff_email, staff_password } = req.body;
 
@@ -1310,7 +1311,7 @@ router.put("/editstaff/:id", async (req, res) => {
   }
 });
 
-router.put("/staff/toggle/:id", async (req, res) => {
+router.put("/staff/toggle/:id", authenticate, async (req, res) => {
   const agentId = req.params.id;
   const { field, value } = req.body;
 
@@ -1347,7 +1348,7 @@ router.put("/staff/toggle/:id", async (req, res) => {
   }
 });
 
-router.delete("/agentdelete/:id", async (req, res) => {
+router.delete("/agentdelete/:id", authenticate, async (req, res) => {
   try {
     const id = req.params.id;
 
@@ -1382,7 +1383,7 @@ router.delete("/agentdelete/:id", async (req, res) => {
   }
 });
 
-router.post("/staffpost", async (req, res) => {
+router.post("/staffpost", authenticate, async (req, res) => {
   try {
     const { staff_agent, staff_email, staff_password } = req.body;
 
@@ -1434,7 +1435,7 @@ router.post("/staffpost", async (req, res) => {
   }
 });
 
-router.get("/allstaffs", async (req, res) => {
+router.get("/allstaffs", authenticate, async (req, res) => {
   try {
     const sql =
       "SELECT id, staff_agent, staff_email, can_view_fares, can_view_sales, can_edit_stock, can_manage_staff, created_at, updated_at FROM staff ORDER BY id DESC LIMIT 1000";
@@ -1455,7 +1456,7 @@ router.get("/allstaffs", async (req, res) => {
   }
 });
 
-router.post("/otbpost", async (req, res) => {
+router.post("/otbpost", authenticate, async (req, res) => {
   try {
     const { agent_name, mail } = req.body;
 
@@ -1501,7 +1502,7 @@ router.get("/allotbs", async (req, res) => {
   }
 });
 
-router.delete("/otbdelete/:id", async (req, res) => {
+router.delete("/otbdelete/:id", authenticate, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
 
@@ -1535,58 +1536,63 @@ router.delete("/otbdelete/:id", async (req, res) => {
   }
 });
 
-router.post("/change-logo", upload.single("file"), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res
-        .status(400)
-        .json({ success: false, message: "No file uploaded" });
-    }
-
-    const filename = req.file.filename;
-    const uploadsDir = path.join(process.cwd(), "uploads");
-
-    const [rows] = await pool.execute(
-      "SELECT * FROM logo ORDER BY id ASC LIMIT 1",
-    );
-    const existing = rows.length > 0 ? rows[0] : null;
-
-    if (existing) {
-      if (existing.logo && existing.logo !== filename) {
-        const oldFilePath = path.join(uploadsDir, existing.logo);
-        try {
-          await fsp.access(oldFilePath);
-          await fsp.unlink(oldFilePath);
-        } catch (unlinkErr) {}
+router.post(
+  "/change-logo",
+  upload.single("file"),
+  authenticate,
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res
+          .status(400)
+          .json({ success: false, message: "No file uploaded" });
       }
 
-      await pool.execute(
-        "UPDATE logo SET logo = ?, updated_at = NOW() WHERE id = ?",
-        [filename, existing.id],
-      );
+      const filename = req.file.filename;
+      const uploadsDir = path.join(process.cwd(), "uploads");
 
-      return res.status(200).json({
-        success: true,
-        message: "Logo updated successfully",
-        file: { filename, path: `/uploads/${filename}` },
-      });
-    } else {
-      await pool.execute(
-        "INSERT INTO logo (id, logo, created_at, updated_at) VALUES (1, ?, NOW(), NOW())",
-        [filename],
+      const [rows] = await pool.execute(
+        "SELECT * FROM logo ORDER BY id ASC LIMIT 1",
       );
+      const existing = rows.length > 0 ? rows[0] : null;
 
-      return res.status(201).json({
-        success: true,
-        message: "Logo uploaded successfully",
-        file: { filename, path: `/uploads/${filename}` },
-      });
+      if (existing) {
+        if (existing.logo && existing.logo !== filename) {
+          const oldFilePath = path.join(uploadsDir, existing.logo);
+          try {
+            await fsp.access(oldFilePath);
+            await fsp.unlink(oldFilePath);
+          } catch (unlinkErr) {}
+        }
+
+        await pool.execute(
+          "UPDATE logo SET logo = ?, updated_at = NOW() WHERE id = ?",
+          [filename, existing.id],
+        );
+
+        return res.status(200).json({
+          success: true,
+          message: "Logo updated successfully",
+          file: { filename, path: `/uploads/${filename}` },
+        });
+      } else {
+        await pool.execute(
+          "INSERT INTO logo (id, logo, created_at, updated_at) VALUES (1, ?, NOW(), NOW())",
+          [filename],
+        );
+
+        return res.status(201).json({
+          success: true,
+          message: "Logo uploaded successfully",
+          file: { filename, path: `/uploads/${filename}` },
+        });
+      }
+    } catch (err) {
+      console.error("Error in /change-logo:", err);
+      return res.status(500).json({ success: false, message: "Server error" });
     }
-  } catch (err) {
-    console.error("Error in /change-logo:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
-  }
-});
+  },
+);
 
 router.get("/get-logo", async (req, res) => {
   try {
@@ -1608,7 +1614,7 @@ router.get("/get-logo", async (req, res) => {
   }
 });
 
-router.post("/postmail", async (req, res) => {
+router.post("/postmail", authenticate, async (req, res) => {
   try {
     const { email, description } = req.body;
 
@@ -1638,7 +1644,7 @@ router.post("/postmail", async (req, res) => {
   }
 });
 
-router.get("/allemails", async (req, res) => {
+router.get("/allemails", authenticate, async (req, res) => {
   try {
     const sql = "SELECT * FROM company ORDER BY id DESC";
 
@@ -1655,7 +1661,7 @@ router.get("/allemails", async (req, res) => {
   }
 });
 
-router.delete("/emaildelete/:id", async (req, res) => {
+router.delete("/emaildelete/:id", authenticate, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
 
@@ -1690,7 +1696,7 @@ router.delete("/emaildelete/:id", async (req, res) => {
   }
 });
 
-router.get("/alleditsales", async (req, res) => {
+router.get("/alleditsales", authenticate, async (req, res) => {
   const sql =
     "SELECT id, sector, pax, dot, dotb, airline, agent, fare, pnr FROM editsales order by id desc LIMIT 100";
 
@@ -1709,7 +1715,7 @@ router.get("/alleditsales", async (req, res) => {
   }
 });
 
-router.get("/allsalesdone", async (req, res) => {
+router.get("/allsalesdone", authenticate, async (req, res) => {
   const sql =
     "SELECT id, sector, pax, dot, dotb, airline, agent, fare, pnr FROM salesdone order by id desc LIMIT 100";
 
@@ -1728,7 +1734,7 @@ router.get("/allsalesdone", async (req, res) => {
   }
 });
 
-router.delete("/deletesource/:id", (req, res) => {
+router.delete("/deletesource/:id", authenticate, (req, res) => {
   const { id } = req.params;
 
   if (!id) {
@@ -1751,7 +1757,7 @@ router.delete("/deletesource/:id", (req, res) => {
   });
 });
 
-router.get("/somesalessource/:id", async (req, res) => {
+router.get("/somesalessource/:id", authenticate, async (req, res) => {
   const { id } = req.params;
 
   if (!id || isNaN(id)) {
@@ -1788,7 +1794,7 @@ router.get("/somesalessource/:id", async (req, res) => {
   }
 });
 
-router.put("/updatesalessource/:id", async (req, res) => {
+router.put("/updatesalessource/:id", authenticate, async (req, res) => {
   const id = Number(req.params.id);
   const { sector, pax, dot, dotb, airline, fare, pnr, agent } = req.body;
 
@@ -1904,71 +1910,76 @@ function formatDateToDDMMYYYY(d) {
   return `${day}-${month}-${year}`;
 }
 
-router.post("/upload-stock", upload.single("file"), async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+router.post(
+  "/upload-stock",
+  upload.single("file"),
+  authenticate,
+  async (req, res) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
-    const filePath = path.join(uploadDir, req.file.filename);
+      const filePath = path.join(uploadDir, req.file.filename);
 
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile(filePath);
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(filePath);
 
-    const worksheet = workbook.worksheets[0];
-    if (!worksheet)
-      return res.status(400).json({ error: "Excel file has no sheets" });
+      const worksheet = workbook.worksheets[0];
+      if (!worksheet)
+        return res.status(400).json({ error: "Excel file has no sheets" });
 
-    const values = [];
+      const values = [];
 
-    worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
-      if (rowNumber === 1) return;
+      worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+        if (rowNumber === 1) return;
 
-      const [
-        srNo,
-        sectorRaw,
-        paxRaw,
-        dotRaw,
-        fareRaw,
-        airlineRaw,
-        pnrRaw,
-        flightnoRaw,
-      ] = row.values.slice(1);
+        const [
+          srNo,
+          sectorRaw,
+          paxRaw,
+          dotRaw,
+          fareRaw,
+          airlineRaw,
+          pnrRaw,
+          flightnoRaw,
+        ] = row.values.slice(1);
 
-      const sector = sectorRaw?.toString().trim() || null;
-      const pax =
-        paxRaw != null && !isNaN(Number(paxRaw)) ? Number(paxRaw) : null;
-      const sold = 0;
-      const dot = parseDotValue(dotRaw);
-      const fare = fareRaw != null ? fareRaw.toString().trim() : null;
-      const airline = airlineRaw?.toString().trim() || null;
-      const flightno = flightnoRaw?.toString().trim() || null;
-      const pnr = pnrRaw?.toString().trim() || null;
+        const sector = sectorRaw?.toString().trim() || null;
+        const pax =
+          paxRaw != null && !isNaN(Number(paxRaw)) ? Number(paxRaw) : null;
+        const sold = 0;
+        const dot = parseDotValue(dotRaw);
+        const fare = fareRaw != null ? fareRaw.toString().trim() : null;
+        const airline = airlineRaw?.toString().trim() || null;
+        const flightno = flightnoRaw?.toString().trim() || null;
+        const pnr = pnrRaw?.toString().trim() || null;
 
-      if (!sector || !dot) {
-        return;
-      }
+        if (!sector || !dot) {
+          return;
+        }
 
-      values.push([sector, pax, sold, dot, fare, airline, flightno, pnr]);
-    });
+        values.push([sector, pax, sold, dot, fare, airline, flightno, pnr]);
+      });
 
-    if (!values.length)
-      return res.status(400).json({ error: "No valid rows found" });
+      if (!values.length)
+        return res.status(400).json({ error: "No valid rows found" });
 
-    await pool.query(
-      `INSERT INTO stock (sector, pax, sold, dot, fare, airline, flightno, pnr)
+      await pool.query(
+        `INSERT INTO stock (sector, pax, sold, dot, fare, airline, flightno, pnr)
        VALUES ?`,
-      [values],
-    );
+        [values],
+      );
 
-    return res.status(200).json({
-      message: "Bulk upload successfully",
-      rowsInserted: values.length,
-    });
-  } catch (err) {
-    console.error("Upload error:", err);
-    return res
-      .status(500)
-      .json({ error: "Upload failed", details: err.message });
-  }
-});
+      return res.status(200).json({
+        message: "Bulk upload successfully",
+        rowsInserted: values.length,
+      });
+    } catch (err) {
+      console.error("Upload error:", err);
+      return res
+        .status(500)
+        .json({ error: "Upload failed", details: err.message });
+    }
+  },
+);
 
 export default router;

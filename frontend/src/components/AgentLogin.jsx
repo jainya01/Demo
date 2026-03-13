@@ -17,7 +17,7 @@ function AgentLogin() {
   const [adminLoading, setAdminLoading] = useState(false);
   const [showAdminPassword, setShowAdminPassword] = useState(false);
 
-  const handleAdminLogin = async (e) => {
+  const handleAgentLogin = async (e) => {
     e.preventDefault();
     setAdminError("");
     setAdminLoading(true);
@@ -34,23 +34,27 @@ function AgentLogin() {
 
         localStorage.setItem("isAuthenticated", "true");
 
-        if (token) localStorage.setItem("agentToken", token);
-        if (agent) {
-          localStorage.setItem("agentUser", JSON.stringify(agent));
-          localStorage.setItem(
-            "agentRole",
-            String(agent.role || "agent").toLowerCase(),
-          );
+        if (token) {
+          localStorage.setItem("token", token);
         }
 
-        localStorage.setItem("role", "agent");
+        if (agent) {
+          localStorage.setItem("agentUser", JSON.stringify(agent));
+
+          const normalizedRole = String(agent.role || "agent").toLowerCase();
+
+          localStorage.setItem("agentRole", normalizedRole);
+          localStorage.setItem("role", normalizedRole);
+        } else {
+          localStorage.setItem("role", "agent");
+        }
 
         navigate("/admin/dashboard");
-        return;
       }
     } catch (err) {
       const msg =
         err.response?.data?.message || "Server error. Please try again";
+
       setAdminError(msg);
     } finally {
       setAdminLoading(false);
@@ -94,7 +98,7 @@ function AgentLogin() {
             <div className="custom-login">Agent Login</div>
           </div>
 
-          <form onSubmit={handleAdminLogin} className="login-form">
+          <form onSubmit={handleAgentLogin} className="login-form">
             <div className="mb-3">
               <label className="form-label fw-medium">Email or Username</label>
               <input

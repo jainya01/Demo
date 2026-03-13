@@ -9,6 +9,7 @@ import {
   faEyeSlash,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
+import axiosInstance from "../utils/axiosInstance";
 
 function Settings() {
   const API_URL = import.meta.env.VITE_API_URL;
@@ -26,11 +27,13 @@ function Settings() {
 
   useEffect(() => {
     const controller = new AbortController();
+
     const fetchLogo = async () => {
       try {
-        const response = await axios.get(`${API_URL}/get-logo`, {
+        const response = await axiosInstance.get(`${API_URL}/get-logo`, {
           signal: controller.signal,
         });
+
         const data = response.data;
 
         if (data.success && data.logo && data.logo.logo) {
@@ -40,15 +43,15 @@ function Settings() {
           setLogo(null);
         }
       } catch (error) {
-        if (axios.isCancel(error)) {
-        } else {
-          console.error("Error fetching logo:", error);
-          setLogo(null);
-        }
+        if (axios.isCancel(error)) return;
+
+        console.error("Error fetching logo:", error);
+        setLogo(null);
       }
     };
 
     fetchLogo();
+
     return () => {
       controller.abort();
     };
@@ -76,9 +79,13 @@ function Settings() {
 
     try {
       setLoading(true);
-      const response = await axios.post(`${API_URL}/change-logo`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const response = await axiosInstance.post(
+        `${API_URL}/change-logo`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
 
       if (response.data.success) {
         const baseURL = API_URL.replace(/\/api$/, "");
@@ -121,7 +128,7 @@ function Settings() {
         description: (emailForm.description || "").trim(),
       };
 
-      const response = await axios.post(`${API_URL}/postmail`, payload);
+      const response = await axiosInstance.post(`${API_URL}/postmail`, payload);
 
       const isSuccess =
         (response.data && response.data.success === true) ||
@@ -181,7 +188,9 @@ function Settings() {
         return;
       }
 
-      const response = await axios.delete(`${API_URL}/emaildelete/${idForApi}`);
+      const response = await axiosInstance.delete(
+        `${API_URL}/emaildelete/${idForApi}`,
+      );
 
       const success =
         (response && response.status === 200) ||
@@ -213,7 +222,7 @@ function Settings() {
     const controller = new AbortController();
     const allemails = async () => {
       try {
-        const response = await axios.get(`${API_URL}/allemails`, {
+        const response = await axiosInstance.get(`${API_URL}/allemails`, {
           signal: controller.signal,
         });
 
@@ -245,7 +254,7 @@ function Settings() {
 
   const fetchAdmins = async () => {
     try {
-      const response = await axios.get(`${API_URL}/alladmindata`);
+      const response = await axiosInstance.get(`${API_URL}/alladmindata`);
       const list = response.data?.data || [];
 
       const findIdInObject = (obj) => {
@@ -358,10 +367,14 @@ function Settings() {
         password,
       };
 
-      const response = await axios.post(`${API_URL}/postadminmail`, payload, {
-        headers: { Accept: "application/json" },
-        validateStatus: () => true,
-      });
+      const response = await axiosInstance.post(
+        `${API_URL}/postadminmail`,
+        payload,
+        {
+          headers: { Accept: "application/json" },
+          validateStatus: () => true,
+        },
+      );
 
       const isSuccess =
         response.status === 200 ||
@@ -423,7 +436,9 @@ function Settings() {
         return;
       }
 
-      const response = await axios.delete(`${API_URL}/admindelete/${idNum}`);
+      const response = await axiosInstance.delete(
+        `${API_URL}/admindelete/${idNum}`,
+      );
 
       const success =
         (response && response.status === 200) ||
@@ -481,7 +496,7 @@ function Settings() {
     }
 
     try {
-      await axios.put(`${API_URL}/editadmin/${selectedAdminId}`, {
+      await axiosInstance.put(`${API_URL}/editadmin/${selectedAdminId}`, {
         newEmail: adminEmailField,
         newPassword: newPassword,
       });

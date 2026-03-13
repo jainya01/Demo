@@ -33,11 +33,16 @@ function AdminLogin() {
         const token = response.data?.token ?? null;
 
         localStorage.setItem("isAuthenticated", "true");
-        if (token) localStorage.setItem("adminToken", token);
+
+        if (token) {
+          localStorage.setItem("token", token);
+        }
 
         if (admin) {
           localStorage.setItem("adminUser", JSON.stringify(admin));
+
           const normalizedRole = String(admin.role || "admin").toLowerCase();
+
           localStorage.setItem("adminRole", normalizedRole);
           localStorage.setItem("role", normalizedRole);
         } else {
@@ -45,11 +50,11 @@ function AdminLogin() {
         }
 
         navigate("/admin/dashboard");
-        return;
       }
     } catch (err) {
       const msg =
         err.response?.data?.message || "Server error. Please try again";
+
       setAdminError(msg);
     } finally {
       setAdminLoading(false);

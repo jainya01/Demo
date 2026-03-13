@@ -1,7 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import { useParams } from "react-router-dom";
-import axios from "axios";
 import "../App.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -13,6 +12,7 @@ import {
   faChevronRight,
   faChevronLeft,
 } from "@fortawesome/free-solid-svg-icons";
+import axiosInstance from "../utils/axiosInstance";
 
 function startOfWeek(d) {
   const x = new Date(d);
@@ -144,7 +144,7 @@ function StockManagement() {
     e.preventDefault();
 
     try {
-      const response = await axios.post(`${API_URL}/stockpost`, stock, {
+      const response = await axiosInstance.post(`${API_URL}/stockpost`, stock, {
         headers: { "Content-Type": "application/json" },
       });
 
@@ -399,8 +399,8 @@ function StockManagement() {
   const fetchData = async () => {
     try {
       const [stocksResponse, salesResponse] = await Promise.all([
-        axios.get(`${API_URL}/allstocks`),
-        axios.get(`${API_URL}/allsales`),
+        axiosInstance.get(`${API_URL}/allstocks`),
+        axiosInstance.get(`${API_URL}/allsales`),
       ]);
 
       setStaff(stocksResponse.data?.data || []);
@@ -640,7 +640,7 @@ function StockManagement() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await axios.post(`${API_URL}/upload-stock`, formData);
+      const res = await axiosInstance.post(`${API_URL}/upload-stock`, formData);
 
       if (res.status === 200) {
         toast.success(res.data.message || "File uploaded successfully!");
@@ -683,7 +683,7 @@ function StockManagement() {
     if (!id) return;
 
     try {
-      await axios.delete(`${API_URL}/deletestockdata/${id}`);
+      await axiosInstance.delete(`${API_URL}/deletestockdata/${id}`);
       await fetchData();
       setOpenIndex(null);
       toast.success("Stock deleted");
@@ -701,7 +701,7 @@ function StockManagement() {
     if (!confirmDelete) return;
 
     try {
-      const res = await axios.delete(`${API_URL}/deletesalesid/${id}`, {
+      const res = await axiosInstance.delete(`${API_URL}/deletesalesid/${id}`, {
         data: { staff },
       });
 
@@ -737,7 +737,9 @@ function StockManagement() {
 
   const somestocks = async () => {
     try {
-      const response = await axios.get(`${API_URL}/somestocksdata/${id}`);
+      const response = await axiosInstance.get(
+        `${API_URL}/somestocksdata/${id}`,
+      );
 
       const data = response.data?.data;
 
@@ -765,7 +767,7 @@ function StockManagement() {
     }
 
     try {
-      const response = await axios.put(
+      const response = await axiosInstance.put(
         `${API_URL}/updatestocks/${editData.id}`,
         {
           sector: editData.sector,

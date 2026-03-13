@@ -18,6 +18,7 @@ import {
   faChevronUp,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
+import axiosInstance from "../utils/axiosInstance";
 
 function SuggestionsPortal({
   parentRect,
@@ -104,7 +105,7 @@ function Otb() {
 
   const fetchOtbData = async () => {
     try {
-      const response = await axios.get(`${API_URL}/allotbs`);
+      const response = await axiosInstance.get(`${API_URL}/allotbs`);
       setStaffList(response.data?.data || response.data || []);
     } catch (error) {
       console.error("Error fetching allotbs:", error);
@@ -129,7 +130,7 @@ function Otb() {
 
     const allAgents = async () => {
       try {
-        const response = await axios.get(`${API_URL}/allagents`, {
+        const response = await axiosInstance.get(`${API_URL}/allagents`, {
           signal: controller.signal,
         });
         setOtb(response.data?.data || response.data || []);
@@ -238,7 +239,7 @@ function Otb() {
       setLoading(true);
 
       const payload = { agent_name, mail };
-      const res = await axios.post(`${API_URL}/otbpost`, payload, {
+      const res = await axiosInstance.post(`${API_URL}/otbpost`, payload, {
         headers: { "Content-Type": "application/json" },
       });
 
@@ -264,12 +265,12 @@ function Otb() {
     if (!window.confirm("Delete this OTB notification?")) return;
 
     try {
-      const resp = await axios.delete(`${API_URL}/otbdelete/${id}`);
+      const resp = await axiosInstance.delete(`${API_URL}/otbdelete/${id}`);
 
       if (resp?.status === 200 && resp?.data?.success === true) {
         setStaffList((prev) => prev.filter((item) => item.id !== id));
         try {
-          const fresh = await axios.get(`${API_URL}/allotbs`);
+          const fresh = await axiosInstance.get(`${API_URL}/allotbs`);
           setStaffList(fresh.data?.data || fresh.data || []);
         } catch (err) {
           console.warn("Refetch after delete failed:", err);

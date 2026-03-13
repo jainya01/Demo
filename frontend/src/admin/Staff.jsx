@@ -10,6 +10,8 @@ import {
   faEdit,
   faUserShield,
 } from "@fortawesome/free-solid-svg-icons";
+import axiosInstance from "../utils/axiosInstance";
+
 
 function Staff() {
   const API_URL = import.meta.env.VITE_API_URL;
@@ -43,7 +45,7 @@ function Staff() {
       if (editingIndex !== null && !force) return;
 
       try {
-        const response = await axios.get(`${API_URL}/allstaffs`, { signal });
+        const response = await axiosInstance.get(`${API_URL}/allstaffs`, { signal });
         const staffRaw = response.data?.data || [];
         const formattedData = staffRaw.map((s) => ({
           staff_agent: s.staff_agent ?? "",
@@ -85,7 +87,7 @@ function Staff() {
     e.preventDefault();
 
     try {
-      const response = await axios.post(`${API_URL}/staffpost`, agent, {
+      const response = await axiosInstance.post(`${API_URL}/staffpost`, agent, {
         headers: { "Content-Type": "application/json" },
       });
 
@@ -192,7 +194,7 @@ function Staff() {
         payload.staff_password = editValues.staff_password;
       }
 
-      const response = await axios.put(
+      const response = await axiosInstance.put(
         `${API_URL}/editstaff/${agentId}`,
         payload,
       );
@@ -296,7 +298,7 @@ function Staff() {
     );
 
     try {
-      await axios.put(`${API_URL}/staff/toggle/${agentId}`, {
+      await axiosInstance.put(`${API_URL}/staff/toggle/${agentId}`, {
         field,
         value,
       });

@@ -33,23 +33,27 @@ function StaffLogin() {
 
         localStorage.setItem("isAuthenticated", "true");
 
-        if (token) localStorage.setItem("staffToken", token);
-        if (staff) {
-          localStorage.setItem("staffUser", JSON.stringify(staff));
-          localStorage.setItem(
-            "staffRole",
-            String(staff.role || "staff").toLowerCase(),
-          );
+        if (token) {
+          localStorage.setItem("token", token);
         }
 
-        localStorage.setItem("role", "staff");
+        if (staff) {
+          localStorage.setItem("staffUser", JSON.stringify(staff));
+
+          const normalizedRole = String(staff.role || "staff").toLowerCase();
+
+          localStorage.setItem("staffRole", normalizedRole);
+          localStorage.setItem("role", normalizedRole);
+        } else {
+          localStorage.setItem("role", "staff");
+        }
 
         navigate("/admin/dashboard");
-        return;
       }
     } catch (err) {
       const msg =
         err.response?.data?.message || "Server error. Please try again";
+
       setError(msg);
     } finally {
       setLoading(false);

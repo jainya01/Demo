@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import axios from "axios";
 import ExcelJS from "exceljs";
 import { toast, ToastContainer } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -8,6 +7,7 @@ import {
   faChevronRight,
   faChevronLeft,
 } from "@fortawesome/free-solid-svg-icons";
+import axiosInstance from "../utils/axiosInstance";
 
 function SalesDone() {
   const API_URL = import.meta.env.VITE_API_URL;
@@ -74,7 +74,7 @@ function SalesDone() {
 
   const allData = async () => {
     try {
-      const response = await axios.get(`${API_URL}/allsalesdone`);
+      const response = await axiosInstance.get(`${API_URL}/allsalesdone`);
       setUser(response.data.data);
       setFilteredData(response.data.data);
     } catch (error) {
@@ -141,7 +141,7 @@ function SalesDone() {
     if (!confirmDelete) return;
 
     try {
-      await axios.delete(`${API_URL}/deletesource/${id}`);
+      await axiosInstance.delete(`${API_URL}/deletesource/${id}`);
 
       setUser((prev) => prev.filter((item) => item.id !== id));
       setFilteredData((prev) => prev.filter((item) => item.id !== id));
@@ -195,7 +195,7 @@ function SalesDone() {
     }
 
     try {
-      const response = await axios.put(
+      const response = await axiosInstance.put(
         `${API_URL}/updatesalessource/${editData.id}`,
         {
           sector: editData.sector,
@@ -232,7 +232,7 @@ function SalesDone() {
   useEffect(() => {
     const agents = async () => {
       try {
-        const response = await axios.get(`${API_URL}/allagents`);
+        const response = await axiosInstance.get(`${API_URL}/allagents`);
         setAgents(response.data.data || []);
       } catch (error) {
         console.error("error", error);

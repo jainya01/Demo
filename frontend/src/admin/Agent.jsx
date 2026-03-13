@@ -10,6 +10,7 @@ import {
   faEdit,
   faUserShield,
 } from "@fortawesome/free-solid-svg-icons";
+import axiosInstance from "../utils/axiosInstance";
 
 function Agent() {
   const API_URL = import.meta.env.VITE_API_URL;
@@ -44,7 +45,7 @@ function Agent() {
       if (editingIndex !== null && !force) return;
 
       try {
-        const response = await axios.get(`${API_URL}/allagents`, { signal });
+        const response = await axiosInstance.get(`${API_URL}/allagents`, { signal });
 
         const agentsRaw = Array.isArray(response.data)
           ? response.data
@@ -88,7 +89,7 @@ function Agent() {
     e.preventDefault();
 
     try {
-      const response = await axios.post(`${API_URL}/agentpost`, agent, {
+      const response = await axiosInstance.post(`${API_URL}/agentpost`, agent, {
         headers: { "Content-Type": "application/json" },
       });
 
@@ -203,7 +204,7 @@ function Agent() {
         payload.agent_password = editValues.password;
       }
 
-      const response = await axios.put(
+      const response = await axiosInstance.put(
         `${API_URL}/editagent/${agentId}`,
         payload,
       );
@@ -248,7 +249,7 @@ function Agent() {
   useEffect(() => {
     const allStaff = async () => {
       try {
-        const res = await axios.get(`${API_URL}/allagents`);
+        const res = await axiosInstance.get(`${API_URL}/allagents`);
         const list = res.data?.data || [];
 
         const normalized = list.map((s) => ({
@@ -273,7 +274,7 @@ function Agent() {
         value: Number(value),
       };
 
-      const res = await axios.put(
+      const res = await axiosInstance.put(
         `${API_URL}/agent/toggle/${agentId}`,
         payload,
       );

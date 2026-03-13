@@ -1022,7 +1022,7 @@ function Sales() {
                                   COST:
                                 </strong>{" "}
                                 <span className="seats-left">
-                                  {fare} &nbsp;
+                                  {fare}/- &nbsp;
                                 </span>
                               </div>
 

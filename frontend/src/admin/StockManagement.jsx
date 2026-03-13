@@ -1181,7 +1181,7 @@ function StockManagement() {
                     style={{ wordBreak: "break-word" }}
                   >
                     {group.sector} |{" "}
-                    <span className="group-pnr1 custom-bold">
+                    <span className="group-pnr1">
                       {group.flightno || "none"} |{" "}
                     </span>
                     <span

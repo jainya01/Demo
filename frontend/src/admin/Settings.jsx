@@ -13,15 +13,15 @@ import {
 function Settings() {
   const API_URL = import.meta.env.VITE_API_URL;
 
-  const [logo, setLogo] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [emails, setEmails] = useState([]);
-  const [emailForm, setEmailForm] = useState({ email: "", description: "" });
-  const [emailErrors, setEmailErrors] = useState({});
-  const [nameErrors, setNameErrors] = useState({});
-  const [emailSubmitting, setEmailSubmitting] = useState(false);
+  // const [logo, setLogo] = useState(null);
+  // const [preview, setPreview] = useState(null);
+  // const [file, setFile] = useState(null);
+  // const [loading, setLoading] = useState(false);
+  // const [emails, setEmails] = useState([]);
+  // const [emailForm, setEmailForm] = useState({ email: "", description: "" });
+  // const [emailErrors, setEmailErrors] = useState({});
+  // const [nameErrors, setNameErrors] = useState({});
+  // const [emailSubmitting, setEmailSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {

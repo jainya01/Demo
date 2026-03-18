@@ -220,6 +220,7 @@ function Settings() {
 
   useEffect(() => {
     const controller = new AbortController();
+
     const allemails = async () => {
       try {
         const response = await axiosInstance.get(`${API_URL}/allemails`, {

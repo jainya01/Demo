@@ -1868,13 +1868,11 @@ router.post(
   async (req, res) => {
     try {
       if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-
       const filePath = path.join(uploadDir, req.file.filename);
-
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.readFile(filePath);
-
       const worksheet = workbook.worksheets[0];
+
       if (!worksheet)
         return res.status(400).json({ error: "Excel file has no sheets" });
 
@@ -1884,7 +1882,6 @@ router.post(
         if (rowNumber === 1) return;
 
         const [
-          srNo,
           sectorRaw,
           paxRaw,
           dotRaw,

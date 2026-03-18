@@ -16,7 +16,6 @@ import {
   faXmark,
   faRightFromBracket,
 } from "@fortawesome/free-solid-svg-icons";
-import Travels from "../assets/Travel.webp";
 import axios from "axios";
 
 const NAV_LINKS = [
@@ -218,7 +217,7 @@ export default function Sidebar() {
           </button>
           <Link to="/admin/dashboard" onClick={closeSidebar}>
             <img
-              src={logo || Travels}
+              src={logo}
               alt="logo"
               className="logo-image mb-2 mt-0"
               loading="eager"
@@ -235,7 +234,7 @@ export default function Sidebar() {
           <div className="d-flex justify-content-between align-items-center">
             <Link to="/admin/dashboard" onClick={closeSidebar}>
               <img
-                src={logo || Travels}
+                src={logo}
                 alt="logo"
                 className="logo-image mb-2 mt-2"
                 loading="eager"
@@ -307,7 +306,7 @@ export default function Sidebar() {
         <div className="p-0 d-flex flex-column" style={{ minHeight: "100%" }}>
           <Link to="/admin/dashboard">
             <img
-              src={logo || Travels}
+              src={logo}
               alt="logo"
               className="logo-image mb-2 mt-2"
               loading="eager"

@@ -21,7 +21,7 @@ function Settings() {
   const [emails, setEmails] = useState([]);
   const [emailForm, setEmailForm] = useState({ email: "", description: "" });
   const [emailErrors, setEmailErrors] = useState({});
-  // const [nameErrors, setNameErrors] = useState({});
+  const [nameErrors, setNameErrors] = useState({});
   const [emailSubmitting, setEmailSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 

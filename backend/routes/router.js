@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import ExcelJS from "exceljs";
 import pool from "../config/db.js";
 import authenticate from "../middleware/auth.js";
+import loginLimiter from "../middleware/loginLimiter.js";
 
 dotenv.config();
 const router = express.Router();
@@ -31,7 +32,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-router.post("/adminlogin", async (req, res) => {
+router.post("/adminlogin", loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -41,9 +42,10 @@ router.post("/adminlogin", async (req, res) => {
         .json({ message: "Email and password are required." });
     }
 
-    const [rows] = await pool.execute("SELECT * FROM admin WHERE email = ?", [
-      email,
-    ]);
+    const [rows] = await pool.execute(
+      "SELECT id, email, password, role FROM admin WHERE email = ?",
+      [email],
+    );
 
     if (rows.length === 0) {
       return res.status(401).json({ message: "Invalid email or password." });
@@ -51,28 +53,16 @@ router.post("/adminlogin", async (req, res) => {
 
     const admin = rows[0];
 
-    let isMatch = false;
-
-    if (admin.password && admin.password.length > 0) {
-      try {
-        isMatch = await bcrypt.compare(password, admin.password);
-      } catch (err) {
-        isMatch = false;
-      }
-    }
-
-    if (!isMatch && admin.password === password) {
-      isMatch = true;
-    }
+    const isMatch = await bcrypt.compare(password, admin.password);
 
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid email or password." });
     }
 
     if (!["admin", "superadmin"].includes(admin.role)) {
-      return res
-        .status(403)
-        .json({ message: "You do not have permission to login as admin." });
+      return res.status(403).json({
+        message: "You do not have permission to login as admin.",
+      });
     }
 
     const token = jwt.sign(
@@ -254,7 +244,7 @@ router.get("/alladmindata", authenticate, async (req, res) => {
   }
 });
 
-router.post("/agentlogin", async (req, res) => {
+router.post("/agentlogin", loginLimiter, async (req, res) => {
   try {
     const { agent_email, agent_password } = req.body;
 
@@ -265,7 +255,7 @@ router.post("/agentlogin", async (req, res) => {
     }
 
     const [rows] = await pool.query(
-      "SELECT * FROM agent WHERE agent_email = ? LIMIT 1",
+      "SELECT id, agent_email, agent_password, agent_name FROM agent WHERE agent_email = ?",
       [agent_email],
     );
 
@@ -275,29 +265,10 @@ router.post("/agentlogin", async (req, res) => {
 
     const agent = rows[0];
 
-    let isMatch = false;
-
-    if (agent.agent_password && agent.agent_password.length > 0) {
-      try {
-        isMatch = await bcrypt.compare(agent_password, agent.agent_password);
-      } catch (err) {
-        isMatch = false;
-      }
-    }
-
-    if (!isMatch && agent.agent_password === agent_password) {
-      isMatch = true;
-    }
+    const isMatch = await bcrypt.compare(agent_password, agent.agent_password);
 
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid email or password." });
-    }
-
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      throw new Error(
-        "JWT_SECRET is not defined in your environment variables.",
-      );
     }
 
     const token = jwt.sign(
@@ -306,7 +277,7 @@ router.post("/agentlogin", async (req, res) => {
         email: agent.agent_email,
         role: "agent",
       },
-      secret,
+      process.env.JWT_SECRET,
       { expiresIn: "2h" },
     );
 
@@ -316,7 +287,7 @@ router.post("/agentlogin", async (req, res) => {
       agent: {
         id: agent.id,
         email: agent.agent_email,
-        name: agent.name,
+        name: agent.agent_name,
         role: "agent",
       },
     });
@@ -326,7 +297,7 @@ router.post("/agentlogin", async (req, res) => {
   }
 });
 
-router.post("/stafflogin", async (req, res) => {
+router.post("/stafflogin", loginLimiter, async (req, res) => {
   try {
     const { staff_email, staff_password } = req.body;
 
@@ -337,7 +308,7 @@ router.post("/stafflogin", async (req, res) => {
     }
 
     const [rows] = await pool.query(
-      "SELECT * FROM staff WHERE staff_email = ? LIMIT 1",
+      "SELECT id, staff_email, staff_password FROM staff WHERE staff_email = ?",
       [staff_email],
     );
 
@@ -347,29 +318,10 @@ router.post("/stafflogin", async (req, res) => {
 
     const staff = rows[0];
 
-    let isMatch = false;
-
-    if (staff.staff_password && staff.staff_password.length > 0) {
-      try {
-        isMatch = await bcrypt.compare(staff_password, staff.staff_password);
-      } catch (err) {
-        isMatch = false;
-      }
-    }
-
-    if (!isMatch && staff.staff_password === staff_password) {
-      isMatch = true;
-    }
+    const isMatch = await bcrypt.compare(staff_password, staff.staff_password);
 
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid email or password." });
-    }
-
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      throw new Error(
-        "JWT_SECRET is not defined in your environment variables.",
-      );
     }
 
     const token = jwt.sign(
@@ -378,7 +330,7 @@ router.post("/stafflogin", async (req, res) => {
         email: staff.staff_email,
         role: "staff",
       },
-      secret,
+      process.env.JWT_SECRET,
       { expiresIn: "1h" },
     );
 
@@ -388,7 +340,6 @@ router.post("/stafflogin", async (req, res) => {
       staff: {
         id: staff.id,
         email: staff.staff_email,
-        name: staff.name,
         role: "staff",
       },
     });
@@ -947,7 +898,7 @@ router.get("/allagents", authenticate, async (req, res) => {
     const offset = (page - 1) * limit;
 
     const sql = `
-      SELECT id, agent_name, agent_email, can_view_agents, can_view_fares, can_view_sales, can_edit_stock, created_at, updated_at
+      SELECT id, agent_name, agent_email, role, can_view_agents, can_view_fares, can_view_sales, can_edit_stock, created_at, updated_at
       FROM agent
       ORDER BY id DESC
       LIMIT ${limit} OFFSET ${offset}
@@ -1438,7 +1389,7 @@ router.post("/staffpost", authenticate, async (req, res) => {
 router.get("/allstaffs", authenticate, async (req, res) => {
   try {
     const sql =
-      "SELECT id, staff_agent, staff_email, can_view_fares, can_view_sales, can_edit_stock, can_manage_staff, created_at, updated_at FROM staff ORDER BY id DESC LIMIT 1000";
+      "SELECT id, staff_agent, staff_email, can_view_fares, can_view_sales, can_edit_stock, can_manage_staff, created_at, updated_at, role FROM staff ORDER BY id DESC LIMIT 1000";
 
     const [results] = await pool.query(sql);
 
@@ -1485,7 +1436,7 @@ router.post("/otbpost", authenticate, async (req, res) => {
   }
 });
 
-router.get("/allotbs", async (req, res) => {
+router.get("/allotbs", authenticate, async (req, res) => {
   try {
     const sql = "SELECT * FROM otb ORDER BY id DESC LIMIT 1000";
 

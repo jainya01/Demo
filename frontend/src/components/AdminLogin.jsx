@@ -10,7 +10,6 @@ function AdminLogin() {
 
   const navigate = useNavigate();
   const [logo, setLogo] = useState([]);
-
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [adminError, setAdminError] = useState("");

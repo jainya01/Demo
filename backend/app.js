@@ -4,6 +4,7 @@ import path from "path";
 import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
+import compression from "compression";
 dotenv.config();
 
 const app = express();
@@ -14,6 +15,7 @@ app.use(
   }),
 );
 
+app.use(compression());
 app.use(express.json());
 
 app.use(

@@ -31,7 +31,7 @@ import axiosInstance from "../utils/axiosInstance";
 function Dashboard() {
   const API_URL = import.meta.env.VITE_API_URL;
 
-  const roles = localStorage.getItem("role");
+  const [currentUser, setCurrentUser] = useState(null);
   const [globalQuery, setGlobalQuery] = useState("");
   const [stockList, setStockList] = useState([]);
   const [filteredStockList, setFilteredStockList] = useState([]);
@@ -524,7 +524,6 @@ function Dashboard() {
 
   const [open, setOpen] = useState(false);
   const [role, setRole] = useState("");
-  const [staff, setStaff] = useState([]);
 
   const [permissions, setPermissions] = useState({
     can_view_agents: 0,
@@ -541,10 +540,6 @@ function Dashboard() {
         const staffResponse = await axiosInstance.get(`${API_URL}/allstaffs`);
         const staffs = staffResponse.data?.data || staffResponse.data || [];
 
-        if (isMounted) {
-          setStaff(staffs);
-        }
-
         const admin = JSON.parse(localStorage.getItem("adminUser"));
         const staffUser = JSON.parse(localStorage.getItem("staffUser"));
         const agentUser = JSON.parse(localStorage.getItem("agentUser"));
@@ -557,7 +552,12 @@ function Dashboard() {
 
           const me = agents.find((a) => String(a.id) === String(agentUser.id));
 
-          if (isMounted) {
+          if (isMounted && me) {
+            setCurrentUser({
+              name: me.agent_name,
+              role: me.role || "agent",
+            });
+
             setPermissions({
               can_view_agents: Number(me?.can_view_agents) || 0,
               can_view_fares: Number(me?.can_view_fares) || 0,
@@ -565,12 +565,14 @@ function Dashboard() {
               can_edit_stock: Number(me?.can_edit_stock) || 0,
             });
           }
+
           return;
         }
 
         if (admin) {
           if (isMounted) {
             setRole("admin");
+
             setPermissions({
               can_view_agents: 1,
               can_view_fares: 1,
@@ -586,25 +588,46 @@ function Dashboard() {
 
           const me = staffs.find((s) => String(s.id) === String(staffUser.id));
 
-          if (isMounted) {
+          if (isMounted && me) {
+            setCurrentUser({
+              name: me.staff_agent,
+              role: me.role || "staff",
+            });
+
             setPermissions({
               can_view_fares: Number(me?.can_view_fares) || 0,
               can_view_sales: Number(me?.can_view_sales) || 0,
               can_edit_stock: Number(me?.can_edit_stock) || 0,
             });
           }
+
           return;
         }
 
         if (isMounted) {
           setRole("");
-          setPermissions({ can_view_agents: 0, can_view_fares: 0 });
+          setCurrentUser(null);
+
+          setPermissions({
+            can_view_agents: 0,
+            can_view_fares: 0,
+            can_view_sales: 0,
+            can_edit_stock: 0,
+          });
         }
       } catch (err) {
         console.error("Auth init failed:", err);
+
         if (isMounted) {
           setRole("");
-          setPermissions({ can_view_agents: 0, can_view_fares: 0 });
+          setCurrentUser(null);
+
+          setPermissions({
+            can_view_agents: 0,
+            can_view_fares: 0,
+            can_view_sales: 0,
+            can_edit_stock: 0,
+          });
         }
       }
     };
@@ -627,7 +650,6 @@ function Dashboard() {
   const [showModal, setShowModal] = useState(false);
   const modalRef1 = useRef();
   const { id } = useParams();
-  const [admin, setAdmin] = useState([]);
 
   const [editData, setEditData] = useState({
     id: "",
@@ -738,26 +760,40 @@ function Dashboard() {
     const adminData = async () => {
       try {
         const adminUser = JSON.parse(localStorage.getItem("adminUser"));
+
+        if (!adminUser) return;
+
         const response = await axiosInstance.get(`${API_URL}/alladmindata`);
         const admins = response.data.data || [];
-        const currentAdmin = admins.find((a) => a.id === adminUser?.id);
-        setAdmin(currentAdmin);
+
+        const currentAdmin = admins.find(
+          (a) => String(a.id) === String(adminUser.id),
+        );
+
+        if (currentAdmin) {
+          setCurrentUser({
+            name: currentAdmin.name,
+            role: currentAdmin.role || "admin",
+          });
+        }
       } catch (error) {
         console.error("error", error);
       }
     };
 
     adminData();
-  }, []);
+  }, [API_URL]);
 
   const getInitials = (name) => {
-    if (!name) return "";
+    if (!name || typeof name !== "string") return "";
 
-    const parts = name.split(" ");
-    return parts
-      .map((p) => p[0])
-      .join("")
-      .toUpperCase();
+    const parts = name.trim().split(" ").filter(Boolean);
+
+    if (parts.length === 1) {
+      return parts[0][0].toUpperCase();
+    }
+
+    return parts[0][0].toUpperCase() + parts[parts.length - 1][0].toUpperCase();
   };
 
   const [urase, setUrase] = useState([]);
@@ -877,51 +913,44 @@ function Dashboard() {
               </span>
             </div>
 
-            {roles === "admin" && (
-              <>
-                <Link
-                  className="text-decoration-none text-dark"
-                  to="/admin/urase"
+            <Link className="text-decoration-none text-dark" to="/admin/urase">
+              <div className="position-relative poniter-class">
+                <FontAwesomeIcon icon={faBell} />
+                <div
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-flex align-items-center justify-content-center"
+                  style={{
+                    width: "20px",
+                    height: "20px",
+                    borderRadius: "50%",
+                    fontSize: "11px",
+                    padding: 0,
+                  }}
                 >
-                  <div className="position-relative poniter-class">
-                    <FontAwesomeIcon icon={faBell} />
-                    <div
-                      className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-flex align-items-center justify-content-center"
-                      style={{
-                        width: "20px",
-                        height: "20px",
-                        borderRadius: "50%",
-                        fontSize: "11px",
-                        padding: 0,
-                      }}
-                    >
-                      {urase.length}
-                    </div>
-                  </div>
-                </Link>
+                  {urase.length}
+                </div>
+              </div>
+            </Link>
 
-                <Link
-                  className="text-decoration-none text-dark"
-                  to="/admin/settings"
+            <Link
+              className="text-decoration-none text-dark"
+              to="/admin/settings"
+            >
+              <div className="d-flex align-items-center gap-2 poniter-class">
+                <div
+                  className="rounded-circle bg-success text-white d-flex align-items-center justify-content-center fw-bold"
+                  style={{ width: "36px", height: "36px" }}
                 >
-                  <div className="d-flex align-items-center gap-2 poniter-class">
-                    <div
-                      className="rounded-circle bg-success text-white d-flex align-items-center justify-content-center fw-bold"
-                      style={{ width: "36px", height: "36px" }}
-                    >
-                      {getInitials(admin?.name)}
-                    </div>
+                  {getInitials(currentUser?.name)}
+                </div>
 
-                    <div>
-                      <div className="fw-semibold">{admin?.name}</div>
-                      <small className="text-muted fw-medium">
-                        {admin?.role}
-                      </small>
-                    </div>
-                  </div>
-                </Link>
-              </>
-            )}
+                <div>
+                  <div className="fw-semibold">{currentUser?.name}</div>
+                  <small className="text-muted fw-medium">
+                    {currentUser?.role}
+                  </small>
+                </div>
+              </div>
+            </Link>
           </div>
         </div>
 

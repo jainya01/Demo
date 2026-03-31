@@ -269,19 +269,36 @@ function Otb() {
 
       if (resp?.status === 200 && resp?.data?.success === true) {
         setStaffList((prev) => prev.filter((item) => item.id !== id));
-        try {
-          const fresh = await axiosInstance.get(`${API_URL}/allotbs`);
-          setStaffList(fresh.data?.data || fresh.data || []);
-        } catch (err) {
-          console.warn("Refetch after delete failed:", err);
-        }
+
+        const removeIdFromStorage = (key, id) => {
+          const raw = localStorage.getItem(key);
+
+          if (!raw) return;
+
+          const arr = raw
+            .split(",")
+            .map((v) => v.trim())
+            .filter((v) => v.length > 0);
+
+          const filtered = arr.filter((v) => String(v) !== String(id));
+
+          if (filtered.length === 0) {
+            localStorage.removeItem(key);
+          } else {
+            localStorage.setItem(key, filtered.join(","));
+          }
+        };
+
+        removeIdFromStorage("uraseBlockedIds", id);
+        removeIdFromStorage("uraseIds", id);
+
+        const fresh = await axiosInstance.get(`${API_URL}/allotbs`);
+        setStaffList(fresh.data?.data || fresh.data || []);
       } else {
         console.error("Delete failed:", resp?.data || resp);
-        alert(resp?.data?.message || "Delete failed on server.");
       }
     } catch (err) {
       console.error("Delete error:", err);
-      alert("Something went wrong while deleting. Check console.");
     }
   };
 
@@ -303,10 +320,29 @@ function Otb() {
     return staffList.slice(start, start + itemsPerPage);
   }, [staffList, currentPage, itemsPerPage]);
 
+  const [page, setPage] = useState([]);
+
+  useEffect(() => {
+    const alldata = async () => {
+      try {
+        const response = await axiosInstance.get(`${API_URL}/allpagedata`);
+        setPage(response.data?.result || []);
+      } catch (error) {
+        console.error("error", error);
+      }
+    };
+    alldata();
+  }, []);
+
+  const otbPage = page.find((p) => p.title?.toLowerCase().includes("otb"));
+
   return (
     <div className="content-wrapper">
-      <div className="d-flex flex-wrap justify-content-start mb-0 text-center border header-customization gap-5 px-1 m-0 py-3 mt-0">
-        <form onSubmit={handleSubmit}>
+      <div className="d-flex flex-wrap justify-content-between px-lg-3 text-center gap-3 px-1 py-3 border header-customization">
+        <form
+          className="d-flex flex-row gap-2 flex-wrap ms-2 ms-lg-0"
+          onSubmit={handleSubmit}
+        >
           <div className="row g-3 align-items-start ms-lg-3 ms-0">
             <div className="col-md-4 col-6 col-sm-6">
               <div className="position-relative w-100" ref={wrapperRef}>
@@ -348,6 +384,10 @@ function Otb() {
               >
                 {loading ? "Saving..." : "Submit"}
               </button>
+
+              <div className="mt-1 ms-3 salesdone-page text-center text-nowrap">
+                {otbPage?.full_name || "OK To Board"}
+              </div>
             </div>
           </div>
         </form>

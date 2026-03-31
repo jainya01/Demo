@@ -9,7 +9,7 @@ import { fileURLToPath } from "url";
 import ExcelJS from "exceljs";
 import pool from "../config/db.js";
 import authenticate from "../middleware/auth.js";
-import loginLimiter from "../middleware/loginLimiter.js";
+// import loginLimiter from "../middleware/loginLimiter.js";
 
 dotenv.config();
 const router = express.Router();
@@ -32,7 +32,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-router.post("/adminlogin", loginLimiter, async (req, res) => {
+router.post("/adminlogin", async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -68,7 +68,7 @@ router.post("/adminlogin", loginLimiter, async (req, res) => {
     const token = jwt.sign(
       { id: admin.id, email: admin.email, role: admin.role },
       process.env.JWT_SECRET,
-      { expiresIn: "15m" },
+      { expiresIn: "8h" },
     );
 
     res.status(200).json({
@@ -244,7 +244,7 @@ router.get("/alladmindata", authenticate, async (req, res) => {
   }
 });
 
-router.post("/agentlogin", loginLimiter, async (req, res) => {
+router.post("/agentlogin", async (req, res) => {
   try {
     const { agent_email, agent_password } = req.body;
 
@@ -297,7 +297,7 @@ router.post("/agentlogin", loginLimiter, async (req, res) => {
   }
 });
 
-router.post("/stafflogin", loginLimiter, async (req, res) => {
+router.post("/stafflogin", async (req, res) => {
   try {
     const { staff_email, staff_password } = req.body;
 
@@ -1929,5 +1929,29 @@ router.post(
     }
   },
 );
+
+router.get("/allpagedata", async (req, res) => {
+  try {
+    const SQL = "SELECT id, title, full_name FROM page";
+    const [result] = await pool.execute(SQL);
+    return res.status(200).json({ message: "data come successfully", result });
+  } catch (error) {
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.put("/editpage/:id", async (req, res) => {
+  const { id } = req.params;
+  const { title, full_name } = req.body;
+  try {
+    const SQL = "UPDATE page SET title = ?, full_name = ? WHERE id = ?";
+    const [result] = await pool.execute(SQL, [title, full_name, id]);
+    return res
+      .status(200)
+      .json({ message: "Page updated successfully", result });
+  } catch (error) {
+    return res.status(500).json({ message: "Internal server error", error });
+  }
+});
 
 export default router;

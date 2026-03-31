@@ -521,6 +521,98 @@ function Settings() {
   const endIndex = startIndex + itemsPerPage;
   const paginatedEmails = emails.slice(startIndex, endIndex);
 
+  // page update OTB, URASE, SDFOS
+
+  const [pageList, setPageList] = useState([]);
+  const [selectedPageId, setSelectedPageId] = useState("");
+
+  const [pageData, setPageData] = useState({
+    title: "",
+    full_name: "",
+  });
+
+  const getAllPages = async () => {
+    try {
+      const res = await axiosInstance.get(`${API_URL}/allpagedata`);
+      if (res.data?.result) {
+        setPageList(res.data.result);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    getAllPages();
+  }, []);
+
+  const handlePageChange = (e) => {
+    const id = e.target.value;
+    setSelectedPageId(id);
+
+    const selected = pageList.find((item) => item.id == id);
+
+    if (selected) {
+      setPageData({
+        title: selected.title || "",
+        full_name: selected.full_name || "",
+      });
+    } else {
+      setPageData({
+        title: "",
+        full_name: "",
+      });
+    }
+  };
+
+  const handleUpdatePage = async (e) => {
+    e.preventDefault();
+
+    if (!selectedPageId) {
+      toast.warning("Please select a page");
+      return;
+    }
+
+    try {
+      const res = await axiosInstance.put(
+        `${API_URL}/editpage/${selectedPageId}`,
+        pageData,
+      );
+
+      if (res.status === 200) {
+        toast.success("Updated successfully");
+        await getAllPages();
+
+        setSelectedPageId("");
+        setPageData({
+          title: "",
+          full_name: "",
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Update failed");
+    }
+  };
+
+  const handleCancel = (e) => {
+    e.preventDefault();
+    setSelectedPageId("");
+    setPageData({
+      title: "",
+      full_name: "",
+    });
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+
+    setPageData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
   return (
     <div className="content-wrapper">
       <div className="d-flex flex-wrap justify-content-evenly mb-0 text-center border gap-3 px-1 m-0 py-3 mt-0 header-customization">
@@ -652,7 +744,7 @@ function Settings() {
                       }
                     }}
                   >
-                    <option>Select a admin</option>
+                    <option>Choose a Admin</option>
                     {Array.isArray(adminEmail) && adminEmail.length > 0 ? (
                       adminEmail.map((item) => (
                         <option key={item.id} value={item.id}>
@@ -666,7 +758,7 @@ function Settings() {
 
                   <input
                     className="form-control mt-2 sector-wise settings-input"
-                    placeholder="New email"
+                    placeholder="New Email"
                     type="email"
                     value={adminEmailField}
                     onChange={(e) => setAdminEmailField(e.target.value)}
@@ -677,7 +769,7 @@ function Settings() {
                     <input
                       className="form-control mt-2 sector-wise settings-input"
                       type={showPassword ? "text" : "password"}
-                      placeholder="New password"
+                      placeholder="New Password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       required
@@ -702,7 +794,7 @@ function Settings() {
                   <div className="d-flex justify-content-start align-items-center gap-2 mt-1 flex-wrap">
                     <button
                       type="submit"
-                      className="btn sector-submit2 mt-2 d-flex justify-content-center align-items-center border border-transparent"
+                      className="btn sector-submit2 mt-2 d-flex align-items-center border"
                       onClick={changePassword}
                       style={{ height: "35px" }}
                     >
@@ -711,7 +803,7 @@ function Settings() {
 
                     <button
                       type="button"
-                      className="btn btn-outline-success update-update1 mt-2 d-flex justify-content-center align-items-center text-dark border border-transparent"
+                      className="btn sector-submit2 mt-2 d-flex align-items-center border"
                       style={{ height: "35px" }}
                       onClick={() => {
                         setAdminEmailField("");
@@ -730,12 +822,9 @@ function Settings() {
           <div className="col-lg-3 col-md-6 col-sm-6 col-12">
             <div
               className="border rounded-2 d-flex flex-column align-items-center sector-wise px-2 bg-white"
-              style={{ height: "292px" }}
+              style={{ height: "299.7px" }}
             >
-              <div
-                className="py-2 w-100 text-start text-dark custom-bold ps-0 mt-2"
-                style={{ cursor: "pointer" }}
-              >
+              <div className="py-2 w-100 text-start text-dark custom-bold ps-0 mt-2">
                 {loading ? "Uploading..." : "Select Logo"}
               </div>
 
@@ -786,11 +875,11 @@ function Settings() {
             <div className="card rounded-2 shadow-sm mb-2">
               <div className="d-flex justify-content-between px-2 py-2">
                 <div className="text-dark custom-bold mt-2">
-                  Add company email
+                  Add Company Email
                 </div>
               </div>
 
-              <div style={{ height: "245px" }}>
+              <div style={{ height: "251px" }}>
                 <div className="card-body p-2">
                   <form onSubmit={handleEmailSubmit}>
                     <div className="">
@@ -862,6 +951,73 @@ function Settings() {
                     </div>
                   </form>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-lg-3 col-md-6 col-sm-6 col-12">
+            <div className="p-2 rounded-2 border-change">
+              <div className="text-start d-flex justify-content-between align-items-center text-dark custom-bold mt-2">
+                Actions
+              </div>
+
+              <div style={{ height: "237px" }}>
+                <form>
+                  <select
+                    className="form-select sector-wise settings-input mt-3"
+                    value={selectedPageId}
+                    onChange={handlePageChange}
+                  >
+                    <option>Choose a Page</option>
+                    {pageList?.length > 0 ? (
+                      pageList.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.title}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>No page found</option>
+                    )}
+                  </select>
+
+                  <input
+                    className="form-control mt-2 sector-wise settings-input"
+                    placeholder="New Title"
+                    type="text"
+                    name="title"
+                    value={pageData.title}
+                    onChange={handleInputChange}
+                  />
+
+                  <input
+                    className="form-control mt-2 sector-wise settings-input"
+                    type="text"
+                    placeholder="Full Name"
+                    name="full_name"
+                    value={pageData.full_name}
+                    onChange={handleInputChange}
+                  />
+
+                  <div className="d-flex justify-content-start align-items-center gap-2 mt-1 flex-wrap">
+                    <button
+                      type="submit"
+                      className="btn sector-submit2 mt-2 d-flex align-items-center border"
+                      onClick={handleUpdatePage}
+                      style={{ height: "35px" }}
+                    >
+                      Update
+                    </button>
+
+                    <button
+                      type="submit"
+                      className="btn sector-submit2 mt-2 d-flex align-items-center border"
+                      onClick={handleCancel}
+                      style={{ height: "35px" }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           </div>

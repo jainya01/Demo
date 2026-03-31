@@ -29,7 +29,7 @@ export const exportAirlineExcel = async (data, airlineName) => {
       templateKey = "SAUDIA";
     } else {
       templateKey = Object.keys(AIRLINE_TEMPLATE_MAP).find(
-        (key) => normalizeAirline(key) === input
+        (key) => normalizeAirline(key) === input,
       );
     }
 
@@ -75,7 +75,7 @@ export const exportAirlineExcel = async (data, airlineName) => {
         new Blob([buffer], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         }),
-        fileName
+        fileName,
       );
 
       return;
@@ -143,7 +143,7 @@ export const exportAirlineExcel = async (data, airlineName) => {
         new Blob([buffer], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         }),
-        fileName
+        fileName,
       );
 
       return;
@@ -207,7 +207,7 @@ export const exportAirlineExcel = async (data, airlineName) => {
         new Blob([buffer], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         }),
-        fileName
+        fileName,
       );
     }
 
@@ -269,7 +269,7 @@ export const exportAirlineExcel = async (data, airlineName) => {
           new Blob([buffer], {
             type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           }),
-          fileName || "Salam_Air.xlsx"
+          fileName || "Salam_Air.xlsx",
         );
       } catch (error) {
         console.error("SALAM AIR Excel generation failed:", error);
@@ -335,7 +335,7 @@ export const exportAirlineExcel = async (data, airlineName) => {
           new Blob([buffer], {
             type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           }),
-          fileName || "Flynas.xlsx"
+          fileName || "Flynas.xlsx",
         );
       } catch (error) {
         console.error("FLYNAS Excel generation failed:", error);
@@ -404,7 +404,7 @@ export const exportAirlineExcel = async (data, airlineName) => {
         new Blob([buffer], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         }),
-        fileName
+        fileName,
       );
     }
 
@@ -478,7 +478,7 @@ export const exportAirlineExcel = async (data, airlineName) => {
         new Blob([buffer], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         }),
-        fileName
+        fileName,
       );
     }
 
@@ -563,7 +563,7 @@ export const exportAirlineExcel = async (data, airlineName) => {
         new Blob([buffer], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         }),
-        fileName
+        fileName,
       );
     }
 
@@ -638,7 +638,7 @@ export const exportAirlineExcel = async (data, airlineName) => {
         new Blob([buffer], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         }),
-        fileName
+        fileName,
       );
     }
 
@@ -694,7 +694,7 @@ export const exportAirlineExcel = async (data, airlineName) => {
         row.getCell("E").value = item.pnr || "";
         row.getCell("F").value = sector;
         row.getCell("G").value = formatDate(
-          item.dot || item.travel_date || item.date_of_travel
+          item.dot || item.travel_date || item.date_of_travel,
         );
         row.getCell("H").value = item.visa_type || "TOURIST";
 
@@ -710,7 +710,7 @@ export const exportAirlineExcel = async (data, airlineName) => {
         new Blob([buffer], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         }),
-        fileName
+        fileName,
       );
     }
 
@@ -780,7 +780,7 @@ export const exportAirlineExcel = async (data, airlineName) => {
         new Blob([buffer], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         }),
-        fileName
+        fileName,
       );
     }
 
@@ -868,7 +868,7 @@ export const exportAirlineExcel = async (data, airlineName) => {
         new Blob([buffer], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         }),
-        fileName
+        fileName,
       );
     }
   } catch (err) {

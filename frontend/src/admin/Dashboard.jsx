@@ -11,6 +11,7 @@ import {
   Tooltip,
 } from "recharts";
 import { exportAirlineExcel } from "../utils/exportExcel";
+import { exportExcel } from "../utils/exportDashboard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faGlobe,
@@ -41,6 +42,7 @@ function Dashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [paxQuery, setPaxQuery] = useState("");
   const itemsPerPage = 11;
+  const cardColors = ["#00897b", "#4285f4", "#5e35b1", "#e8710a"];
 
   function isDotExpired(value) {
     const d = parseToDateObj(value);
@@ -62,10 +64,15 @@ function Dashboard() {
   });
 
   const [chartStats, setChartStats] = useState([
-    { name: "Total Sector", value: 18, icon: faGlobe },
-    { name: "Total Passenger", value: 35, icon: faUserGroup },
-    { name: "Total Airlines", value: 16, icon: faPlane },
-    { name: "Total PNR", value: 15, icon: faFileLines },
+    { name: "Total Sector", value: 0, icon: faGlobe, popupType: "Sector" },
+    {
+      name: "Total Passenger",
+      value: 0,
+      icon: faUserGroup,
+      popupType: "Passenger",
+    },
+    { name: "Total Airlines", value: 0, icon: faPlane, popupType: "Airlines" },
+    { name: "Total PNR", value: 0, icon: faFileLines, popupType: "PNR" },
   ]);
 
   useEffect(() => {
@@ -163,10 +170,20 @@ function Dashboard() {
 
     if (!Array.isArray(stockList) || stockList.length === 0) {
       setChartStats([
-        { name: "Total Sector", value: 0, icon: faGlobe },
-        { name: "Total Passenger", value: totalPassenger, icon: faUserGroup },
-        { name: "Total Airlines", value: 0, icon: faPlane },
-        { name: "Total PNR", value: 0, icon: faFileLines },
+        { name: "Total Sector", value: 0, icon: faGlobe, popupType: "Sector" },
+        {
+          name: "Total Passenger",
+          value: totalPassenger,
+          icon: faUserGroup,
+          popupType: "Passenger",
+        },
+        {
+          name: "Total Airlines",
+          value: 0,
+          icon: faPlane,
+          popupType: "Airlines",
+        },
+        { name: "Total PNR", value: 0, icon: faFileLines, popupType: "PNR" },
       ]);
       return;
     }
@@ -187,10 +204,30 @@ function Dashboard() {
     const totalPnr = pnrSet.size;
 
     setChartStats([
-      { name: "Total Sector", value: totalSector, icon: faGlobe },
-      { name: "Total Passenger", value: totalPassenger, icon: faUserGroup },
-      { name: "Total Airlines", value: totalAirlines, icon: faPlane },
-      { name: "Total PNR", value: totalPnr, icon: faFileLines },
+      {
+        name: "Total Sector",
+        value: totalSector,
+        icon: faGlobe,
+        popupType: "Sector",
+      },
+      {
+        name: "Total Passenger",
+        value: totalPassenger,
+        icon: faUserGroup,
+        popupType: "Passenger",
+      },
+      {
+        name: "Total Airlines",
+        value: totalAirlines,
+        icon: faPlane,
+        popupType: "Airlines",
+      },
+      {
+        name: "Total PNR",
+        value: totalPnr,
+        icon: faFileLines,
+        popupType: "PNR",
+      },
     ]);
   }, [stockList, sales]);
 
@@ -822,6 +859,304 @@ function Dashboard() {
     uraseData();
   }, []);
 
+  // dashboard page upgradation
+
+  const [activePopup, setActivePopup] = useState(null);
+  const [dateRange, setDateRange] = useState("");
+  const [allSectors, setAllSectors] = useState(false);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [allPassengers, setAllPassengers] = useState(false);
+  const [allAirline, setAllAirline] = useState(false);
+  const [allPnr, SetAllPnr] = useState(false);
+  const modalRef = useRef(null);
+
+  const parseDate = (dateStr) => {
+    if (!dateStr) return null;
+
+    let year, month, day;
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      [year, month, day] = dateStr.split("-");
+    } else if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
+      [day, month, year] = dateStr.split("-");
+    } else if (dateStr.includes("T")) {
+      const d = new Date(dateStr);
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    } else {
+      return null;
+    }
+
+    return new Date(Number(year), Number(month) - 1, Number(day));
+  };
+
+  const getFilteredData = (data, type) => {
+    let filtered = [...data];
+
+    if (type === "Sector") {
+      if (!allSectors && editData.sector) {
+        filtered = filtered.filter((item) =>
+          item.sector?.toLowerCase().includes(editData.sector.toLowerCase()),
+        );
+      }
+    }
+
+    if (type === "Passenger") {
+      if (!allPassengers && editData.pax?.trim()) {
+        filtered = filtered.filter((item) =>
+          item.pax?.toLowerCase().includes(editData.pax.toLowerCase()),
+        );
+      }
+
+      if (!allSectors && editData.sector?.trim()) {
+        filtered = filtered.filter((item) =>
+          item.sector?.toLowerCase().includes(editData.sector.toLowerCase()),
+        );
+      }
+    }
+
+    if (type === "Airlines") {
+      if (!allAirline && editData.airline?.trim()) {
+        filtered = filtered.filter(
+          (item) =>
+            item.airline?.trim().toLowerCase() ===
+            editData.airline.trim().toLowerCase(),
+        );
+      }
+    }
+
+    if (type === "PNR") {
+      if (!allPnr) {
+        if (editData.pnr?.trim()) {
+          filtered = filtered.filter((item) =>
+            item.pnr?.toLowerCase().includes(editData.pnr.toLowerCase()),
+          );
+        }
+      }
+    }
+
+    const today = new Date();
+    const todayOnly = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+
+    if (dateRange === "custom" && fromDate && toDate) {
+      const from = parseDate(fromDate);
+      const to = parseDate(toDate);
+
+      filtered = filtered.filter((item) => {
+        const d = parseDate(item.dot);
+        return d && d >= from && d <= to;
+      });
+    } else if (dateRange === "weekly") {
+      const last7Days = new Date(todayOnly);
+      last7Days.setDate(todayOnly.getDate() - 7);
+
+      filtered = filtered.filter((item) => {
+        const d = parseDate(item.dot);
+        return d && d >= last7Days && d <= todayOnly;
+      });
+    } else if (dateRange === "monthly") {
+      filtered = filtered.filter((item) => {
+        const d = parseDate(item.dot);
+        return (
+          d &&
+          d.getMonth() === todayOnly.getMonth() &&
+          d.getFullYear() === todayOnly.getFullYear()
+        );
+      });
+    } else if (dateRange === "yearly") {
+      filtered = filtered.filter((item) => {
+        const d = parseDate(item.dot);
+        return d && d.getFullYear() === todayOnly.getFullYear();
+      });
+    }
+
+    return filtered;
+  };
+
+  const handleDownload = async () => {
+    try {
+      if (activePopup === "Sector") {
+        const stockRes = await axiosInstance.get(`${API_URL}/allstocks`);
+        const stockData = stockRes?.data?.data || [];
+
+        if (!stockData.length) {
+          toast.error("No data found.");
+          return;
+        }
+
+        const filteredStock = getFilteredData(stockData, "Sector");
+
+        if (!filteredStock.length) {
+          toast.error("No records found for the selected criteria.");
+          return;
+        }
+
+        const formattedStock = filteredStock.map((item) => ({
+          sector: item.sector,
+          pnr: item.pnr,
+          pax_sold: item.sold || item.pax,
+          dot: item.dot,
+          airline: item.airline,
+          flightno: item.flightno,
+        }));
+
+        exportExcel(formattedStock, "Sector");
+      }
+
+      if (activePopup === "Passenger") {
+        const [salesRes, stockRes] = await Promise.all([
+          axiosInstance.get(`${API_URL}/allsales`),
+          axiosInstance.get(`${API_URL}/allstocks`),
+        ]);
+
+        const salesData = salesRes?.data?.data || [];
+        const stockData = stockRes?.data?.data || [];
+
+        if (!salesData.length) {
+          toast.error("No data found.");
+          return;
+        }
+
+        const stockMap = {};
+        stockData.forEach((item) => {
+          if (item.sector) {
+            stockMap[item.sector.trim().toLowerCase()] = item;
+          }
+        });
+
+        const filteredSales = getFilteredData(salesData, "Passenger");
+
+        if (!filteredSales.length) {
+          toast.error("No records found for the selected criteria.");
+          return;
+        }
+
+        const formattedSales = filteredSales.map((item) => {
+          const sectorKey = item.sector?.trim().toLowerCase();
+
+          const matchedStock = stockMap[sectorKey];
+
+          return {
+            pax: item.pax || "",
+            pnr: item.pnr || "",
+            fare: item.fare || 0,
+            dot: item.dot || "",
+            airline: item.airline || "",
+            flightno: matchedStock?.flightno || "",
+
+            sector: item.sector || "",
+          };
+        });
+
+        exportExcel(formattedSales, "Passenger");
+      }
+
+      if (activePopup === "Airlines") {
+        const stockRes = await axiosInstance.get(`${API_URL}/allstocks`);
+        const stockData = stockRes?.data?.data || [];
+
+        if (!stockData.length) {
+          toast.error("No data found.");
+          return;
+        }
+
+        const filteredStock = getFilteredData(stockData, "Airlines");
+
+        if (!filteredStock.length) {
+          toast.error("No records found for the selected criteria.");
+          return;
+        }
+
+        const formattedStock = filteredStock.map((item) => ({
+          airline: item.airline,
+          flightno: item.flightno,
+        }));
+
+        exportExcel(formattedStock, "Airlines");
+      }
+
+      if (activePopup === "PNR") {
+        const stockRes = await axiosInstance.get(`${API_URL}/allsales`);
+        const stockData = stockRes?.data?.data || [];
+
+        if (!stockData.length) {
+          toast.error("No data found.");
+          return;
+        }
+
+        const filteredStock = getFilteredData(stockData, "PNR");
+
+        if (!filteredStock.length) {
+          toast.error("No records found for the selected criteria.");
+          return;
+        }
+
+        const formattedStock = filteredStock.map((item) => {
+          const fullName = item.pax?.trim() || "";
+
+          let firstName = "";
+          let lastName = "";
+
+          if (fullName.includes(" ")) {
+            const parts = fullName.split(" ");
+            firstName = parts[0];
+            lastName = parts.slice(1).join(" ");
+          } else {
+            firstName = fullName;
+            lastName = fullName;
+          }
+
+          const lower = fullName.toLowerCase();
+          let title = "MR";
+
+          if (
+            lower.includes("sita") ||
+            lower.includes("gita") ||
+            lower.includes("priya") ||
+            lower.includes("neha") ||
+            lower.includes("pooja") ||
+            lower.includes("kavita")
+          ) {
+            title = "MRS";
+          }
+
+          return {
+            pnr: item.pnr,
+            dot: item.dot,
+            title: title,
+            pax: firstName,
+            lastname: lastName,
+          };
+        });
+
+        exportExcel(formattedStock, "PNR");
+      }
+    } catch (error) {
+      console.error("Download failed:", error);
+      toast.error("Failed to download data");
+    }
+  };
+
+  useEffect(() => {
+    if (!activePopup) return;
+
+    const handleClickOutside = (event) => {
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        setActivePopup(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [activePopup]);
+
   return (
     <>
       <div className="content-wrapper">
@@ -1209,6 +1544,629 @@ function Dashboard() {
         <div className="container-fluid py-2 dashboard">
           <div className="row">
             <div className="col-12 col-lg-8">
+              <div className="row row-cols-2 row-cols-sm-2 row-cols-lg-4 g-3 mb-3">
+                {Array.isArray(chartStats) &&
+                  chartStats.map((item, i) => (
+                    <div
+                      key={i}
+                      className="col"
+                      onClick={() => setActivePopup(item.popupType)}
+                    >
+                      <div
+                        className="card dashboard-stat-card h-100 border shadow-sm"
+                        style={{
+                          backgroundColor: cardColors[i % cardColors.length],
+                          cursor: "pointer",
+                        }}
+                      >
+                        <div className="card-body text-center">
+                          <FontAwesomeIcon
+                            icon={item.icon}
+                            className="mb-2 custom-icon-color"
+                            size="lg"
+                          />
+                          <h6 className="text-muted mt-1 custom-icon-color1">
+                            {item.name}
+                          </h6>
+                          <div className="mb-0 item-value">{item.value}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+
+              {activePopup && (
+                <>
+                  <div className="custom-modal-overlay"></div>
+                  <div className="modal fade show d-block" tabIndex="-1">
+                    <div
+                      className="modal-dialog modal-dialog-centered"
+                      ref={modalRef}
+                    >
+                      <div className="modal-content custom-color">
+                        <div className="modal-header">
+                          <div className="d-flex justify-content-between align-items-center w-100">
+                            <h5 className="modal-title text-dark">
+                              {activePopup}
+                            </h5>
+
+                            <FontAwesomeIcon
+                              icon={faX}
+                              className="text-dark"
+                              style={{ cursor: "pointer" }}
+                              onClick={() => setActivePopup(null)}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="modal-body">
+                          {activePopup === "Sector" && (
+                            <>
+                              <div className="mb-2">
+                                <label className="form-label text-dark fw-medium">
+                                  Sector Name
+                                </label>
+
+                                <input
+                                  type="text"
+                                  className="form-control sector-wise"
+                                  placeholder="Sector Name"
+                                  name="sector"
+                                  value={editData.sector}
+                                  onChange={(e) =>
+                                    setEditData({
+                                      ...editData,
+                                      sector: e.target.value,
+                                    })
+                                  }
+                                />
+                              </div>
+
+                              <div className="d-flex align-items-center gap-1">
+                                <label className="form-label text-dark fw-medium">
+                                  All Sectors:
+                                </label>
+                                <input
+                                  type="checkbox"
+                                  className="d-flex align-items-center mb-1"
+                                  checked={allSectors}
+                                  onChange={(e) =>
+                                    setAllSectors(e.target.checked)
+                                  }
+                                />
+                              </div>
+
+                              <div>
+                                <label className="form-label text-dark fw-bold">
+                                  Date Range
+                                </label>
+
+                                <div className="d-flex mb-1 gap-1">
+                                  <input
+                                    type="radio"
+                                    id="weeklyPNR"
+                                    name="dateRangePNR"
+                                    value="weekly"
+                                    checked={dateRange === "weekly"}
+                                    onChange={(e) =>
+                                      setDateRange(e.target.value)
+                                    }
+                                  />
+                                  <label
+                                    htmlFor="weeklyPNR"
+                                    className="text-dark"
+                                  >
+                                    Weekly
+                                  </label>
+                                </div>
+
+                                <div className="d-flex mb-1 gap-1">
+                                  <input
+                                    type="radio"
+                                    id="monthlyPNR"
+                                    name="dateRangePNR"
+                                    value="monthly"
+                                    checked={dateRange === "monthly"}
+                                    onChange={(e) =>
+                                      setDateRange(e.target.value)
+                                    }
+                                  />
+                                  <label
+                                    htmlFor="monthlyPNR"
+                                    className="text-dark"
+                                  >
+                                    Monthly
+                                  </label>
+                                </div>
+
+                                <div className="d-flex gap-1 mb-1">
+                                  <input
+                                    type="radio"
+                                    id="yearlyPNR"
+                                    name="dateRangePNR"
+                                    value="yearly"
+                                    checked={dateRange === "yearly"}
+                                    onChange={(e) =>
+                                      setDateRange(e.target.value)
+                                    }
+                                  />
+                                  <label
+                                    htmlFor="yearlyPNR"
+                                    className="text-dark"
+                                  >
+                                    Yearly
+                                  </label>
+                                </div>
+
+                                <div>
+                                  <input
+                                    type="radio"
+                                    id="customrangePNR"
+                                    name="dateRangePNR"
+                                    value="custom"
+                                    checked={dateRange === "custom"}
+                                    onChange={(e) =>
+                                      setDateRange(e.target.value)
+                                    }
+                                  />
+                                  <label
+                                    htmlFor="customrangePNR"
+                                    className="text-dark ms-1"
+                                  >
+                                    Custom Range
+                                  </label>
+                                </div>
+
+                                {dateRange === "custom" && (
+                                  <>
+                                    <div className="mt-2">
+                                      <label className="text-dark">From</label>
+                                      <input
+                                        type="date"
+                                        className="form-control mt-1 sector-wise"
+                                        value={fromDate}
+                                        onChange={(e) =>
+                                          setFromDate(e.target.value)
+                                        }
+                                      />
+                                    </div>
+
+                                    <div className="mt-2">
+                                      <label className="text-dark">To</label>
+                                      <input
+                                        type="date"
+                                        className="form-control mt-1 sector-wise"
+                                        value={toDate}
+                                        onChange={(e) =>
+                                          setToDate(e.target.value)
+                                        }
+                                      />
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </>
+                          )}
+
+                          {activePopup === "Passenger" && (
+                            <>
+                              <div className="mb-2 d-flex flex-column">
+                                <label className="form-label text-dark fw-medium">
+                                  Passenger Name
+                                </label>
+                                <input
+                                  type="text"
+                                  className="form-control sector-wise mb-2"
+                                  placeholder="Passenger Name"
+                                  name="pax"
+                                  value={editData.pax}
+                                  onChange={(e) =>
+                                    setEditData({
+                                      ...editData,
+                                      pax: e.target.value,
+                                    })
+                                  }
+                                />
+
+                                <div className="d-flex align-items-center gap-2 mb-1">
+                                  <label className="form-label text-dark fw-medium mb-0">
+                                    All Passengers:
+                                  </label>
+                                  <input
+                                    type="checkbox"
+                                    checked={allPassengers}
+                                    onChange={(e) =>
+                                      setAllPassengers(e.target.checked)
+                                    }
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="form-label text-dark fw-bold">
+                                    Date Range
+                                  </label>
+
+                                  {[
+                                    "weekly",
+                                    "monthly",
+                                    "yearly",
+                                    "custom",
+                                  ].map((type) => {
+                                    const id = `dateRangePassenger-${type}`;
+                                    return (
+                                      <div
+                                        key={type}
+                                        className="d-flex gap-1 mb-1"
+                                      >
+                                        <input
+                                          type="radio"
+                                          id={id}
+                                          name="dateRangePassenger"
+                                          value={type}
+                                          checked={dateRange === type}
+                                          onChange={(e) =>
+                                            setDateRange(e.target.value)
+                                          }
+                                        />
+                                        <label
+                                          htmlFor={id}
+                                          className="text-dark text-capitalize"
+                                        >
+                                          {type === "custom"
+                                            ? "Custom Range"
+                                            : type}
+                                        </label>
+                                      </div>
+                                    );
+                                  })}
+
+                                  {dateRange === "custom" && (
+                                    <>
+                                      <div className="mt-2">
+                                        <label className="text-dark">
+                                          From
+                                        </label>
+                                        <input
+                                          type="date"
+                                          className="form-control mt-1 sector-wise"
+                                          value={fromDate}
+                                          onChange={(e) =>
+                                            setFromDate(e.target.value)
+                                          }
+                                        />
+                                      </div>
+
+                                      <div className="mt-2">
+                                        <label className="text-dark">To</label>
+                                        <input
+                                          type="date"
+                                          className="form-control mt-1 sector-wise"
+                                          value={toDate}
+                                          onChange={(e) =>
+                                            setToDate(e.target.value)
+                                          }
+                                        />
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </>
+                          )}
+
+                          {activePopup === "Airlines" && (
+                            <>
+                              <div className="mb-2 d-flex flex-column">
+                                <label className="form-label text-dark fw-medium">
+                                  Airline Name
+                                </label>
+                                <input
+                                  type="text"
+                                  className="form-control sector-wise"
+                                  placeholder="Airline Name"
+                                  name="airline"
+                                  value={editData.airline}
+                                  onChange={(e) =>
+                                    setEditData({
+                                      ...editData,
+                                      airline: e.target.value,
+                                    })
+                                  }
+                                />
+
+                                <div className="d-flex align-items-center gap-2 mt-2">
+                                  <label className="form-label text-dark fw-medium mb-0">
+                                    All Airlines:
+                                  </label>
+                                  <input
+                                    type="checkbox"
+                                    checked={allAirline}
+                                    onChange={(e) =>
+                                      setAllAirline(e.target.checked)
+                                    }
+                                  />
+                                </div>
+
+                                <div className="mt-2">
+                                  <label className="form-label text-dark fw-bold">
+                                    Date Range
+                                  </label>
+                                </div>
+
+                                <div>
+                                  <div className="d-flex mb-1 gap-1">
+                                    <input
+                                      type="radio"
+                                      id="weeklyPNR"
+                                      name="dateRangePNR"
+                                      value="weekly"
+                                      checked={dateRange === "weekly"}
+                                      onChange={(e) =>
+                                        setDateRange(e.target.value)
+                                      }
+                                    />
+                                    <label
+                                      htmlFor="weeklyPNR"
+                                      className="text-dark"
+                                    >
+                                      Weekly
+                                    </label>
+                                  </div>
+
+                                  <div className="d-flex mb-1 gap-1">
+                                    <input
+                                      type="radio"
+                                      id="monthlyPNR"
+                                      name="dateRangePNR"
+                                      value="monthly"
+                                      checked={dateRange === "monthly"}
+                                      onChange={(e) =>
+                                        setDateRange(e.target.value)
+                                      }
+                                    />
+                                    <label
+                                      htmlFor="monthlyPNR"
+                                      className="text-dark"
+                                    >
+                                      Monthly
+                                    </label>
+                                  </div>
+
+                                  <div className="d-flex gap-1 mb-1">
+                                    <input
+                                      type="radio"
+                                      id="yearlyPNR"
+                                      name="dateRangePNR"
+                                      value="yearly"
+                                      checked={dateRange === "yearly"}
+                                      onChange={(e) =>
+                                        setDateRange(e.target.value)
+                                      }
+                                    />
+                                    <label
+                                      htmlFor="yearlyPNR"
+                                      className="text-dark"
+                                    >
+                                      Yearly
+                                    </label>
+                                  </div>
+
+                                  <div>
+                                    <input
+                                      type="radio"
+                                      id="customrangePNR"
+                                      name="dateRangePNR"
+                                      value="custom"
+                                      checked={dateRange === "custom"}
+                                      onChange={(e) =>
+                                        setDateRange(e.target.value)
+                                      }
+                                    />
+                                    <label
+                                      htmlFor="customrangePNR"
+                                      className="text-dark ms-1"
+                                    >
+                                      Custom Range
+                                    </label>
+                                  </div>
+
+                                  {dateRange === "custom" && (
+                                    <>
+                                      <div className="mt-2">
+                                        <label className="text-dark">
+                                          From
+                                        </label>
+                                        <input
+                                          type="date"
+                                          className="form-control mt-1 sector-wise"
+                                          value={fromDate}
+                                          onChange={(e) =>
+                                            setFromDate(e.target.value)
+                                          }
+                                        />
+                                      </div>
+
+                                      <div className="mt-2">
+                                        <label className="text-dark">To</label>
+                                        <input
+                                          type="date"
+                                          className="form-control mt-1 sector-wise"
+                                          value={toDate}
+                                          onChange={(e) =>
+                                            setToDate(e.target.value)
+                                          }
+                                        />
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </>
+                          )}
+
+                          {activePopup === "PNR" && (
+                            <>
+                              <div className="mb-2 d-flex flex-column">
+                                <label className="form-label text-dark fw-medium">
+                                  PNR No
+                                </label>
+
+                                <input
+                                  type="text"
+                                  className="form-control sector-wise mb-2"
+                                  placeholder="PNR Number"
+                                  value={editData.pnr || ""}
+                                  onChange={(e) =>
+                                    setEditData((prev) => ({
+                                      ...prev,
+                                      pnr: e.target.value,
+                                    }))
+                                  }
+                                />
+
+                                <div className="d-flex align-items-center gap-2 mt-0 mb-1">
+                                  <label className="form-label text-dark fw-medium mb-0">
+                                    All PNR:
+                                  </label>
+                                  <input
+                                    type="checkbox"
+                                    checked={allPnr}
+                                    onChange={(e) =>
+                                      SetAllPnr(e.target.checked)
+                                    }
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="form-label text-dark fw-bold">
+                                    Date Range
+                                  </label>
+
+                                  <div className="d-flex mb-1 gap-1">
+                                    <input
+                                      type="radio"
+                                      id="weeklyPNR"
+                                      name="dateRangePNR"
+                                      value="weekly"
+                                      checked={dateRange === "weekly"}
+                                      onChange={(e) =>
+                                        setDateRange(e.target.value)
+                                      }
+                                    />
+                                    <label
+                                      htmlFor="weeklyPNR"
+                                      className="text-dark"
+                                    >
+                                      Weekly
+                                    </label>
+                                  </div>
+
+                                  <div className="d-flex mb-1 gap-1">
+                                    <input
+                                      type="radio"
+                                      id="monthlyPNR"
+                                      name="dateRangePNR"
+                                      value="monthly"
+                                      checked={dateRange === "monthly"}
+                                      onChange={(e) =>
+                                        setDateRange(e.target.value)
+                                      }
+                                    />
+                                    <label
+                                      htmlFor="monthlyPNR"
+                                      className="text-dark"
+                                    >
+                                      Monthly
+                                    </label>
+                                  </div>
+
+                                  <div className="d-flex gap-1 mb-1">
+                                    <input
+                                      type="radio"
+                                      id="yearlyPNR"
+                                      name="dateRangePNR"
+                                      value="yearly"
+                                      checked={dateRange === "yearly"}
+                                      onChange={(e) =>
+                                        setDateRange(e.target.value)
+                                      }
+                                    />
+                                    <label
+                                      htmlFor="yearlyPNR"
+                                      className="text-dark"
+                                    >
+                                      Yearly
+                                    </label>
+                                  </div>
+
+                                  <div>
+                                    <input
+                                      type="radio"
+                                      id="customrangePNR"
+                                      name="dateRangePNR"
+                                      value="custom"
+                                      checked={dateRange === "custom"}
+                                      onChange={(e) =>
+                                        setDateRange(e.target.value)
+                                      }
+                                    />
+                                    <label
+                                      htmlFor="customrangePNR"
+                                      className="text-dark ms-1"
+                                    >
+                                      Custom Range
+                                    </label>
+                                  </div>
+
+                                  {dateRange === "custom" && (
+                                    <>
+                                      <div className="mt-2">
+                                        <label className="text-dark">
+                                          From
+                                        </label>
+                                        <input
+                                          type="date"
+                                          className="form-control mt-1 sector-wise"
+                                          value={fromDate}
+                                          onChange={(e) =>
+                                            setFromDate(e.target.value)
+                                          }
+                                        />
+                                      </div>
+
+                                      <div className="mt-2">
+                                        <label className="text-dark">To</label>
+                                        <input
+                                          type="date"
+                                          className="form-control mt-1 sector-wise"
+                                          value={toDate}
+                                          onChange={(e) =>
+                                            setToDate(e.target.value)
+                                          }
+                                        />
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                        <div className="modal-footer">
+                          <button
+                            className="btn btn-outline-success update-update1"
+                            onClick={handleDownload}
+                          >
+                            Download
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
               <div className="card chart-wrapper border ps-0">
                 <div className="mb-3 sales-overview ms-3">Sales Overview</div>
                 <ResponsiveContainer width="100%" height={470}>
@@ -1268,26 +2226,6 @@ function Dashboard() {
                     />
                   </AreaChart>
                 </ResponsiveContainer>
-              </div>
-
-              <div className="row row-cols-2 row-cols-sm-2 row-cols-lg-4 mt-1 g-3 mb-3">
-                {Array.isArray(chartStats) &&
-                  chartStats.map((item, i) => (
-                    <div key={i} className="col">
-                      <div className="card dashboard-stat-card h-100 border shadow-sm">
-                        <div className="card-body text-center">
-                          <FontAwesomeIcon
-                            icon={item.icon}
-                            className="mb-2 custom-icon-color"
-                            size="lg"
-                          />
-
-                          <h6 className="text-muted mt-1">{item.name}</h6>
-                          <div className="mb-0 item-value">{item.value}</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
               </div>
             </div>
 
@@ -1909,7 +2847,6 @@ function Dashboard() {
             </div>
           </div>
         </div>
-
         <ToastContainer position="bottom-right" autoClose={1500} />
       </div>
     </>

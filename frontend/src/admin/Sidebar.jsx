@@ -16,7 +16,8 @@ import {
   faXmark,
   faRightFromBracket,
 } from "@fortawesome/free-solid-svg-icons";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
+import Travels from "../assets/Travel.webp";
 
 const NAV_LINKS = [
   {
@@ -93,7 +94,7 @@ export default function Sidebar() {
   useEffect(() => {
     const mainLogo = async () => {
       try {
-        const response = await axios.get(`${API_URL}/get-logo`);
+        const response = await axiosInstance.get(`${API_URL}/get-logo`);
 
         let logoUrl = null;
 
@@ -123,7 +124,7 @@ export default function Sidebar() {
 
     const fetchAllotbs = async () => {
       try {
-        const response = await axios.get(`${API_URL}/allotbs`);
+        const response = await axiosInstance.get(`${API_URL}/allotbs`);
         const data = response.data?.data || [];
         setOtb(data);
 
@@ -190,8 +191,6 @@ export default function Sidebar() {
     navigate("/", { replace: true });
   };
 
-  let visibleLinks = NAV_LINKS;
-
   if (role === "staff" || role === "agent") {
     visibleLinks = NAV_LINKS.filter((l) => l.path === "/admin/dashboard");
   }
@@ -203,6 +202,48 @@ export default function Sidebar() {
       setBlinkOTB(false);
     }
   };
+
+  const [navLinks, setNavLinks] = useState(NAV_LINKS);
+
+  useEffect(() => {
+    const updateNavLabels = async () => {
+      try {
+        const res = await axiosInstance.get(`${API_URL}/allpagedata`);
+        const pages = res.data?.result || [];
+
+        const updatedNav = NAV_LINKS.map((link) => {
+          if (link.path === "/admin/OTB") {
+            const found = pages.find((p) =>
+              p.title.toLowerCase().includes("otb"),
+            );
+            return found ? { ...link, label: found.title } : link;
+          }
+
+          if (link.path === "/admin/salesdone") {
+            const found = pages.find((p) =>
+              p.title.toLowerCase().includes("sdfos"),
+            );
+            return found ? { ...link, label: found.title } : link;
+          }
+
+          if (link.path === "/admin/urase") {
+            const found = pages.find((p) =>
+              p.title.toLowerCase().includes("urase"),
+            );
+            return found ? { ...link, label: found.title } : link;
+          }
+
+          return link;
+        });
+
+        setNavLinks(updatedNav);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    updateNavLabels();
+  }, []);
 
   return (
     <>
@@ -217,7 +258,7 @@ export default function Sidebar() {
           </button>
           <Link to="/admin/dashboard" onClick={closeSidebar}>
             <img
-              src={logo}
+              src={logo || Travels}
               alt="logo"
               className="logo-image mb-2 mt-0"
               loading="eager"
@@ -234,7 +275,7 @@ export default function Sidebar() {
           <div className="d-flex justify-content-between align-items-center">
             <Link to="/admin/dashboard" onClick={closeSidebar}>
               <img
-                src={logo}
+                src={logo || Travels}
                 alt="logo"
                 className="logo-image mb-2 mt-2"
                 loading="eager"
@@ -255,14 +296,14 @@ export default function Sidebar() {
           <hr className="text-light mt-0 mb-2" />
 
           <div className="list-group list-group-flush ms-2 me-2">
-            {visibleLinks.map((link) => (
+            {navLinks.map((link) => (
               <NavLink
                 key={link.path}
                 to={link.path}
                 end={link.exact}
                 className={({ isActive }) =>
                   [
-                    "list-group-item rounded-0 list-group-item-action mb-0 border-0 rounded-2",
+                    "list-group-item rounded-2 list-group-item-action mb-0 ms-2 border-0",
                     isActive ? "active" : "",
                   ].join(" ")
                 }
@@ -272,10 +313,12 @@ export default function Sidebar() {
                 }}
               >
                 <FontAwesomeIcon icon={link.icon} />
-                <span className="ms-2">{link.label}</span>
+                <span className="ms-2 label-span">{link.label}</span>
+
                 {link.path === "/admin/OTB" && blinkOTB && (
                   <div className="blink-box blink-box1 ms-2"></div>
                 )}
+
                 {link.path === "/admin/urase" && blinkURASE && (
                   <div className="blink-box ms-2"></div>
                 )}
@@ -306,7 +349,7 @@ export default function Sidebar() {
         <div className="p-0 d-flex flex-column" style={{ minHeight: "100%" }}>
           <Link to="/admin/dashboard">
             <img
-              src={logo}
+              src={logo || Travels}
               alt="logo"
               className="logo-image mb-2 mt-2"
               loading="eager"
@@ -317,7 +360,7 @@ export default function Sidebar() {
           <hr className="text-light mt-0 mb-2" />
 
           <div className="list-group rounded-0 me-3">
-            {visibleLinks.map((link) => (
+            {navLinks.map((link) => (
               <NavLink
                 key={link.path}
                 to={link.path}
@@ -334,9 +377,11 @@ export default function Sidebar() {
               >
                 <FontAwesomeIcon icon={link.icon} />
                 <span className="ms-2 label-span">{link.label}</span>
+
                 {link.path === "/admin/OTB" && blinkOTB && (
                   <div className="blink-box blink-box1 ms-2 mb-0 p-0"></div>
                 )}
+
                 {link.path === "/admin/urase" && blinkURASE && (
                   <div className="blink-box ms-2 mb-0 p-0"></div>
                 )}
@@ -346,7 +391,6 @@ export default function Sidebar() {
 
           <div className="mt-auto pt-0 mb-2">
             <hr className="mb-0 text-danger" />
-
             <div
               className="text-start mt-2 d-flex align-items-center logout-color ps-3 py-2"
               onClick={handleLogout}

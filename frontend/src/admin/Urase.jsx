@@ -7,9 +7,6 @@ import {
   useLayoutEffect,
   useMemo,
 } from "react";
-import { toast, ToastContainer } from "react-toastify";
-import "../App.css";
-import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronDown,
@@ -18,6 +15,9 @@ import {
   faChevronUp,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
+import { toast, ToastContainer } from "react-toastify";
+import "../App.css";
+import axios from "axios";
 import axiosInstance from "../utils/axiosInstance";
 
 function SuggestionsPortal({
@@ -319,26 +319,43 @@ function Urase() {
 
   const deleteData = async (id) => {
     if (!id) return;
-    if (!window.confirm("Delete this Urase notification?")) return;
+    if (!window.confirm("Delete this OTB notification?")) return;
 
     try {
       const resp = await axiosInstance.delete(`${API_URL}/otbdelete/${id}`);
 
       if (resp?.status === 200 && resp?.data?.success === true) {
         setStaffList((prev) => prev.filter((item) => item.id !== id));
-        try {
-          const fresh = await axiosInstance.get(`${API_URL}/allotbs`);
-          setStaffList(fresh.data?.data || fresh.data || []);
-        } catch (err) {
-          console.warn("Refetch after delete failed:", err);
-        }
+
+        const removeIdFromStorage = (key, id) => {
+          const raw = localStorage.getItem(key);
+
+          if (!raw) return;
+
+          const arr = raw
+            .split(",")
+            .map((v) => v.trim())
+            .filter((v) => v.length > 0);
+
+          const filtered = arr.filter((v) => String(v) !== String(id));
+
+          if (filtered.length === 0) {
+            localStorage.removeItem(key);
+          } else {
+            localStorage.setItem(key, filtered.join(","));
+          }
+        };
+
+        removeIdFromStorage("uraseBlockedIds", id);
+        removeIdFromStorage("uraseIds", id);
+
+        const fresh = await axiosInstance.get(`${API_URL}/allotbs`);
+        setStaffList(fresh.data?.data || fresh.data || []);
       } else {
         console.error("Delete failed:", resp?.data || resp);
-        alert(resp?.data?.message || "Delete failed on server.");
       }
     } catch (err) {
       console.error("Delete error:", err);
-      alert("Something went wrong while deleting. Check console.");
     }
   };
 
@@ -359,6 +376,22 @@ function Urase() {
     const start = (currentPage - 1) * itemsPerPage;
     return staffList.slice(start, start + itemsPerPage);
   }, [staffList, currentPage, itemsPerPage]);
+
+  const [page, setPage] = useState([]);
+
+  useEffect(() => {
+    const alldata = async () => {
+      try {
+        const response = await axiosInstance.get(`${API_URL}/allpagedata`);
+        setPage(response.data?.result || []);
+      } catch (error) {
+        console.error("error", error);
+      }
+    };
+    alldata();
+  }, []);
+
+  const urasePage = page.find((p) => p.title?.toLowerCase() === "urase");
 
   return (
     <div className="content-wrapper">
@@ -405,6 +438,10 @@ function Urase() {
               >
                 {loading ? "Saving..." : "Submit"}
               </button>
+
+              <div className="mt-1 ms-3 text-center salesdone-page text-nowrap">
+                {urasePage?.full_name || "URASE"}
+              </div>
             </div>
           </div>
         </form>

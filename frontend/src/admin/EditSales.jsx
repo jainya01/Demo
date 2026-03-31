@@ -181,7 +181,7 @@ function EditSales() {
 
                     <th className="group-pnr1 custom-bold">SECTOR</th>
 
-                    <th className="group-pnr1 custom-bold">PAX</th>
+                    <th className="group-pnr1 custom-bold">PAX NAME</th>
 
                     <th className="group-pnr1 custom-bold">AIRLINE</th>
 

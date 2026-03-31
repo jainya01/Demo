@@ -273,6 +273,24 @@ function SalesDone() {
     };
   }, []);
 
+  const [page, setPage] = useState([]);
+
+  useEffect(() => {
+    const alldata = async () => {
+      try {
+        const response = await axiosInstance.get(`${API_URL}/allpagedata`);
+        setPage(response.data?.result || []);
+      } catch (error) {
+        console.error("error", error);
+      }
+    };
+    alldata();
+  }, []);
+
+  const salesDonePage = page.find((p) =>
+    p.title?.toLowerCase().includes("sdfos"),
+  );
+
   return (
     <div className="content-wrapper">
       <div className="d-flex flex-wrap justify-content-between px-lg-3 text-center gap-3 px-1 py-3 border header-customization">
@@ -308,14 +326,16 @@ function SalesDone() {
           >
             Search
           </button>
+
+          <div className="mt-1 salesdone-page text-center">
+            {salesDonePage?.full_name || "Sales done from other source"}
+          </div>
         </form>
       </div>
 
       <div className="container-fluid px-lg-1 px-xl-4 px-xxl-4 px-2">
         <div className="row mt-3">
           <div className="col-lg-12 col-md-12 col-12 mt-3 mt-lg-0 overflow-x-auto">
-            <h5 className="salesdone-page">Sales done from other source</h5>
-
             <div className="table-wrapper overflow-y-hidden overflow-x-auto">
               <table className="table border table-hover table-sm mb-0">
                 <thead className="table-transparent">
@@ -324,7 +344,7 @@ function SalesDone() {
 
                     <th className="group-pnr1 custom-bold">SECTOR</th>
 
-                    <th className="group-pnr1 custom-bold">PAX</th>
+                    <th className="group-pnr1 custom-bold">PAX NAME</th>
 
                     <th className="group-pnr1 custom-bold">AIRLINE</th>
 

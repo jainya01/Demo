@@ -1033,6 +1033,7 @@ aside.admin-sidebar {
   transition: all 0.25s ease-in-out;
   background: #ffffff;
   cursor: pointer;
+  color: #fff !important;
 }
 
 .dashboard-stat-card:hover {
@@ -1050,7 +1051,11 @@ aside.admin-sidebar {
 }
 
 .custom-icon-color {
-  color: #2f8f83;
+  color: #fff;
+}
+
+.custom-icon-color1 {
+  color: #fff !important;
 }
 
 .icon-dashboard {
@@ -1385,9 +1390,9 @@ aside.admin-sidebar {
 }
 
 .admin-accounts {
-  color: #6a7181 !important;
+  color: #6a7181;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 20px;
   word-spacing: 0px;
 }
@@ -1423,7 +1428,7 @@ aside.admin-sidebar {
 }
 
 .custom-bold {
-  font-weight: 600 !important;
+  font-weight: 600;
 }
 
 .back-link {
